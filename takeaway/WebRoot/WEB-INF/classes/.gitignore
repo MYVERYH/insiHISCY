@@ -1,0 +1,9 @@
+/.classpath
+/.mymetadata
+/.project
+/.settings/
+/META-INF/
+/WebRoot/
+/com/
+/jdbc.properties
+/log4j.properties
