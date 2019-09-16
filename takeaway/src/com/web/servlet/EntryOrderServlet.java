@@ -280,7 +280,8 @@ public class EntryOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 新增单据信息 bills 单据信息 billsDetails 单据明细集合 order (采购、配送、入库、退货、领料、领退、调拨、盘点)单据信息
+	 * 新增单据信息 bills 单据信息 billsDetails 单据明细集合 
+	 * order (采购、配送、入库、退货、领料、领退、调拨、盘点)单据信息
 	 * 
 	 * @param request
 	 * @param response

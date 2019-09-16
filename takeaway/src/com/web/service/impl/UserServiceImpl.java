@@ -24,9 +24,14 @@ public class UserServiceImpl implements IUserService {
 	}
 
 	@Override
-	public String insert(User t) {
-		// TODO Auto-generated method stub
-		return null;
+	public String insert(User user) {
+		String str = "";
+		if (userDao.insert(user) > 0) {
+			str = "新增成功";
+		} else {
+			str = "新增失败";
+		}
+		return str;
 	}
 
 	@Override
@@ -37,7 +42,6 @@ public class UserServiceImpl implements IUserService {
 		} else {
 			str = "修改失败";
 		}
-		// TODO Auto-generated method stub
 		return str;
 	}
 
@@ -51,6 +55,12 @@ public class UserServiceImpl implements IUserService {
 	public User findByUserMCAndPassword(String userMC, String password) {
 		// TODO Auto-generated method stub
 		return userDao.findByUserMCAndPassword(userMC, password);
+	}
+
+	@Override
+	public User findByUserNameAndPassword(String userName, String userPassword) {
+		// TODO Auto-generated method stub
+		return userDao.findByUserNameAndPassword(userName, userPassword);
 	}
 
 }

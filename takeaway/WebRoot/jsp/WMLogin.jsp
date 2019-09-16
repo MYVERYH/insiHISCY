@@ -60,8 +60,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
   
   <body>
   	<%
-		String userMC = "";
-		String password = "";
+		String userName = "";
+		String userPassword = "";
 		Cookie[] cookies = request.getCookies();
 		Cookie cookie = null;
 		if (cookies == null) {
@@ -69,12 +69,12 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		} else {
 			for (int i = 0; i < cookies.length; i++) {
 				cookie = cookies[i];
-				if ("userMC".equals(cookie.getName())) {
-					userMC = URLDecoder
+				if ("userNames".equals(cookie.getName())) {
+					userName = URLDecoder
 							.decode(cookie.getValue(), "utf-8");
 				}
-				if ("password".equals(cookie.getName())) {
-					password = URLDecoder
+				if ("userPasswords".equals(cookie.getName())) {
+					userPassword = URLDecoder
 							.decode(cookie.getValue(), "utf-8");
 				}
 			}
@@ -93,8 +93,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
     	</div>
     	<div class="layui-row" style="margin-top: 3%;">
     		<div class="layui-col-lg3 layui-col-md3 layui-col-sm3 layui-col-md-offset6">
-    			<form class="layui-form" action="${ctx}/servlet/MainServlet">
-    				<input type="text" style="display:none" name="type" value="login">
+    			<form id="fmLogin" class="layui-form" action="${ctx}/servlet/MainServlet">
+    				<input type="text" style="display:none" name="type" value="wMLogin">
     				<div class="layui-form-item">
     					<div class="layui-col-lg3 layui-col-md3 layui-col-sm3 layui-col-md-offset1">
     						<h2 style="font-weight: 600;color: #999!important;">欢迎登录</h2>
@@ -105,7 +105,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	    					<i class="layui-icon layui-icon-username" style="font-size: 32px;"></i>
 	    				</label>
 	    				<div class="layui-input-block">
-	    					<input type="text" name="userMC" value="<%=userMC%>" required lay-verify="required" 
+	    					<input type="text" name="userName" value="<%=userName%>" required lay-verify="required" 
 	    					placeholder="请输入账户" autocomplete="off" class="layui-input">
 	    				</div>
 	    			</div>
@@ -114,35 +114,66 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	    					<i class="layui-icon layui-icon-password" style="font-size: 32px;"></i>
 	    				</label>
 	    				<div class="layui-input-block">
-	    					<input type="password" name="password" value="<%=password%>" required lay-verify="required" 
+	    					<input type="password" name="userPassword" value="<%=userPassword%>" required lay-verify="required" 
 	    					placeholder="请输入密码" autocomplete="off" class="layui-input">
 	    				</div>
 	    			</div>
 	    			<div class="layui-form-item" pane>
 	    				<div class="layui-input-block">
-							<input type="checkbox" title="自动登录" lay-skin="primary">
+							<input type="checkbox" name="rememberMe" title="自动登录" lay-skin="primary">
 						</div>
 	    			</div>
 	    			<div class="layui-form-item">
 	    				<div class="layui-input-block">
-	    					<button type="button" class="layui-btn" name="autoLogin" lay-submit style="width: 100%;">登 录</button>
+	    					<button type="button" class="layui-btn" id="btnLogin" lay-submit style="width: 100%;">登 录</button>
 	    				</div>						
 					</div>
 					<div class="layui-form-item">
-						<div class="layui-col-lg2 layui-col-md2 layui-col-sm2 layui-col-md-offset10">
-							<div class="layui-form-mid layui-word-aux" style="margin: 0;float: right;cursor: pointer;">免费注册</div>	
-						</div>	    									
+						<div class="layui-input-block">
+							<div class="layui-col-lg5 layui-col-md5 layui-col-sm5">
+								<div style="margin: 0;float: left;cursor: pointer;">
+									<a href="" style="color: #999!important;">忘记登录密码</a>
+								</div>
+							</div>
+							<div
+								class="layui-col-lg3 layui-col-md3 layui-col-sm3 layui-col-md-offset4">
+								<div style="margin: 0;float: right;cursor: pointer;">
+									<a href="${ctx}/jsp/Register.jsp" style="color: orange;">免费注册</a>
+								</div>
+							</div>
+						</div>
 					</div>
 	    		</form>
     		</div>    		
     	</div>
     </div>    
     <script type="text/javascript" src="${ctx}/Content/js/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="${ctx}/Content/js/jquery.form.js"></script>
     <script type="text/javascript" src="${ctx}/Content/layui/layui.js"></script>
     <script type="text/javascript">
     	layui.use('form', function(){
 		  var form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
 		});
+		$("#btnLogin").click(function() {
+			$("#fmLogin").ajaxSubmit(function(data) {
+				data = JSON.parse(data);
+				if (data.state == true) {
+					window.location.href = "${ctx}/servlet/MainServlet?type=onWMMain&";					
+				} else {
+					layer.alert(data.msg, {
+						icon : 0,
+						title : '提示'
+					});
+				}
+			});
+		});
+		//点击回车键登录
+		function onreturn() {
+		    if (window.event.keyCode == 13) {
+		    	$("#btnLogin").click();
+		        //if (document.all('btnSubmit').click());
+		    }
+		}
     </script>
   </body>
 </html>

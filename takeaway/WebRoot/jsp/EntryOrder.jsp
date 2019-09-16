@@ -89,7 +89,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						<div class="layui-card-header">订货单信息：</div>
 						<div class="layui-card-body" style="padding: 0;">
 							<div class="laui-row">
-								<form id="formPurchaseOrders" class="layui-form" style="margin-top: 26px;">
+								<form id="formPurchaseOrders" class="layui-form" method="post" 
+								action="${ctx}/servlet/EntryOrderServlet" style="margin-top: 26px;">
 									<input type="text" style="display:none" name="type"
 										value="addBills"><input type="text" style="display:none"
 										name="billsType" value="purchaseOrders">

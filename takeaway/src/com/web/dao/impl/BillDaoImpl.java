@@ -2,16 +2,12 @@ package com.web.dao.impl;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mysql.jdbc.Statement;
 import com.web.dao.IBillDao;
 import com.web.po.Bills;
 import com.web.po.BillsDetail;
@@ -43,8 +39,7 @@ public class BillDaoImpl implements IBillDao {
 			+ "raw_material_quantity,total_price) VALUES(?,?,?,?)";
 	private String updateRepertory = "UPDATE pw_repertory SET warehouseId=?,raw_material_id=?,"
 			+ "raw_material_quantity=?,total_price=? WHERE repertory_id=?";
-	private String findSingle = "SELECT `raw_material_price` FROM `pw_raw_material` "
-			+ "WHERE `raw_material_id`=?";
+	private String findSingle = "SELECT `raw_material_price` FROM `pw_raw_material` " + "WHERE `raw_material_id`=?";
 	private String selectCheck = "SELECT r.`bills_id`,b.`bills_num`,w.`warehouseName`,s.`staffName`,"
 			+ "b.`bills_entry_time`,b.`bills_remark` FROM `pw_repertory_check` r JOIN `pw_bills` b "
 			+ "ON r.`bills_id` = b.`bills_id` JOIN `pw_warehouse` w ON b.`warehouseId` = w.`warehouseId` "
@@ -226,35 +221,14 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			con = DBUtil.getConnection();
 			con.setAutoCommit(false);
-			ps = con.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
-			ps.setInt(1, bills.getWarehouseId());
-			ps.setInt(2, bills.getStaffId());
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			String strDate = dateFormat.format(bills.getBillsEntryTime());
-			ps.setDate(3, new Date(dateFormat.parse(strDate).getTime()));
-			ps.setString(4, bills.getBillsNum());
-			ps.setBigDecimal(5, bills.getBillsMoney());
-			ps.setString(6, bills.getBillsRemark());
-			flag = ps.executeUpdate();
-			if (flag > 0) {
-				flag = 0;
-				rs = ps.getGeneratedKeys();
-				if (rs != null) {
-					while (rs.next()) {
-						key = Integer.parseInt(rs.getLong(1) + "");
-					}
-				}
+			key = DaoHelper.setPsToSQLException(con, bills, insert);
+			if (key > 0) {
 				int total = 0;
 				int f = 0;
 				for (BillsDetail billsDetail : billsDetails) {
 					total++;
 					billsDetail.setBillsId(key);
-					ps = con.prepareStatement(insertDetail);
-					ps.setInt(1, billsDetail.getBillsId());
-					ps.setInt(2, billsDetail.getRawMaterialId());
-					ps.setDouble(3, billsDetail.getRawMaterialAmount());
-					ps.setString(4, billsDetail.getRemark());
-					flag = ps.executeUpdate();
+					flag = DaoHelper.setPsToSQLException(con, billsDetail, insertDetail) > 0 ? 1 : 0;
 					f += flag;
 				}
 				if (total == f) {
@@ -268,9 +242,6 @@ public class BillDaoImpl implements IBillDao {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			DBUtil.close(con, ps, rs);
@@ -292,8 +263,7 @@ public class BillDaoImpl implements IBillDao {
 				ps.setInt(1, bills.getWarehouseId());
 				ps.setInt(2, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
-				Repertory repertory = JdbcHelper.getSingleResult(rs,
-						Repertory.class);
+				Repertory repertory = JdbcHelper.getSingleResult(rs, Repertory.class);
 				ps = con.prepareStatement(findSingle);
 				ps.setInt(1, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
@@ -302,9 +272,8 @@ public class BillDaoImpl implements IBillDao {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
 				if (repertory != null) {
-					double count = repertory.getRawMaterialQuantity()
-							+ billsDetail.getRawMaterialAmount();
-					BigDecimal decimal = new BigDecimal(count);
+					double count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
+					BigDecimal decimal = new BigDecimal(count);			
 					ps = con.prepareStatement(updateRepertory);
 					ps.setInt(1, bills.getWarehouseId());
 					ps.setInt(2, billsDetail.getRawMaterialId());
@@ -312,8 +281,7 @@ public class BillDaoImpl implements IBillDao {
 					ps.setBigDecimal(4, decimal.multiply(bigDecimal));
 					ps.setInt(5, repertory.getRepertoryId());
 				} else {
-					BigDecimal decimal = new BigDecimal(
-							billsDetail.getRawMaterialAmount());
+					BigDecimal decimal = new BigDecimal(billsDetail.getRawMaterialAmount());
 					ps = con.prepareStatement(insertRepertory);
 					ps.setInt(1, bills.getWarehouseId());
 					ps.setInt(2, billsDetail.getRawMaterialId());
@@ -341,8 +309,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public int updateRepertory(Bills bills, List<BillsDetail> billsDetails,
-			boolean b) {
+	public int updateRepertory(Bills bills, List<BillsDetail> billsDetails, boolean b) {
 		int flag = 0;
 		try {
 			con = DBUtil.getConnection();
@@ -356,8 +323,7 @@ public class BillDaoImpl implements IBillDao {
 				ps.setInt(1, bills.getWarehouseId());
 				ps.setInt(2, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
-				Repertory repertory = JdbcHelper.getSingleResult(rs,
-						Repertory.class);
+				Repertory repertory = JdbcHelper.getSingleResult(rs, Repertory.class);
 				ps = con.prepareStatement(findSingle);
 				ps.setInt(1, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
@@ -366,11 +332,9 @@ public class BillDaoImpl implements IBillDao {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
 				if (b) {
-					count = repertory.getRawMaterialQuantity()
-							- billsDetail.getRawMaterialAmount();
+					count = repertory.getRawMaterialQuantity() - billsDetail.getRawMaterialAmount();
 				} else {
-					count = repertory.getRawMaterialQuantity()
-							+ billsDetail.getRawMaterialAmount();
+					count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
 				}
 				if (count > -1) {
 					BigDecimal decimal = new BigDecimal(count);
@@ -406,23 +370,16 @@ public class BillDaoImpl implements IBillDao {
 		List<BillsInfo> infos = new ArrayList<BillsInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectCheck);
-			if (!"".equals(selectBills.getBillsNum())
-					&& !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '"
-						+ selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffId());
@@ -448,23 +405,16 @@ public class BillDaoImpl implements IBillDao {
 		long totalRow = 0;
 		try {
 			StringBuffer buffer = new StringBuffer(getCheckTotalRow);
-			if (!"".equals(selectBills.getBillsNum())
-					&& !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '"
-						+ selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffId());
@@ -485,8 +435,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectOrderMaterial(SelectBills selectBills,
-			Page page, String findType) {
+	public List<RawMaterialInfo> selectOrderMaterial(SelectBills selectBills, Page page, String findType) {
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectOrderMaterial);
@@ -497,36 +446,25 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findMaterial3".equals(findType)) {
 				buffer.append(" JOIN `pw_stocks_requisition` a ON b.`bills_id` = a.`bills_id`");
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" WHERE b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = "
-						+ selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = "
-						+ selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num` = '"
-						+ selectBills.getRawMaterialNum() + "'");
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num` = '" + selectBills.getRawMaterialNum() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY b.`bills_id` DESC,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -545,8 +483,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public long getOrderMaterialTotalRow(SelectBills selectBills,
-			String findType) {
+	public long getOrderMaterialTotalRow(SelectBills selectBills, String findType) {
 		long totalRow = 0;
 		try {
 			StringBuffer buffer = new StringBuffer(getOrderMaterialTotalRow);
@@ -557,36 +494,25 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findMaterial3".equals(findType)) {
 				buffer.append(" JOIN `pw_stocks_requisition` a ON b.`bills_id` = a.`bills_id`");
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" WHERE b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = "
-						+ selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = "
-						+ selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num` = '"
-						+ selectBills.getRawMaterialNum() + "'");
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num` = '" + selectBills.getRawMaterialNum() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -644,8 +570,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<BillsInfo> selectOrder(SelectBills selectBills, Page page,
-			String findType) {
+	public List<BillsInfo> selectOrder(SelectBills selectBills, Page page, String findType) {
 		List<BillsInfo> infos = new ArrayList<BillsInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer();
@@ -679,35 +604,25 @@ public class BillDaoImpl implements IBillDao {
 						+ "FROM `pw_warehouse_transfer_order` a");
 			}
 			buffer.append(findOrder);
-			if (!"".equals(selectBills.getBillsNum())
-					&& !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '"
-						+ selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" AND a.`supplierId` = "
-						+ selectBills.getSupplierId());
+				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = "
-						+ selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = "
-						+ selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
 			}
 			if (selectBills.getStaffID() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffID());
@@ -753,35 +668,25 @@ public class BillDaoImpl implements IBillDao {
 						+ "ON a.`warehouseId` = w2.`warehouseId`");
 			}
 			buffer.append(findOrder);
-			if (!"".equals(selectBills.getBillsNum())
-					&& !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '"
-						+ selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = "
-						+ selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" AND a.`supplierId` = "
-						+ selectBills.getSupplierId());
+				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = "
-						+ selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = "
-						+ selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
 			}
 			if (selectBills.getStaffID() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffID());
@@ -805,28 +710,21 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectNowRepertory(SelectBills selectBills,
-			Page page) {
+	public List<RawMaterialInfo> selectNowRepertory(SelectBills selectBills, Page page) {
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectNowRepertory);
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`="
-						+ selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`="
-						+ selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`="
-						+ selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY w.`warehouseId`,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -850,22 +748,16 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(getNowRepertoryTotalRow);
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`="
-						+ selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`="
-						+ selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`="
-						+ selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -883,8 +775,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RepertoryInfo> selectRepertory(SelectBills selectBills,
-			Page page, String findType) {
+	public List<RepertoryInfo> selectRepertory(SelectBills selectBills, Page page, String findType) {
 		List<RepertoryInfo> infos = new ArrayList<RepertoryInfo>();
 		try {
 			con = DBUtil.getConnection();
@@ -892,18 +783,13 @@ public class BillDaoImpl implements IBillDao {
 			if ("findInOrOutRepertory".equals(findType)) {
 				buffer.append(selectRepertory);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`="
-							+ selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum())
-						&& !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`="
-							+ selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName())
-						&& !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%"
-							+ selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id` ORDER BY p.`warehouseId`,"
 						+ "p.`raw_material_id` LIMIT ?,?");
@@ -917,18 +803,13 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findRepertoryDetail".equals(findType)) {
 				buffer.append(findRepertoryDetail);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`="
-							+ selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum())
-						&& !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`="
-							+ selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName())
-						&& !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%"
-							+ selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id` ORDER BY p.`warehouseId`,"
 						+ "p.`raw_material_id` LIMIT ?,?");
@@ -960,18 +841,13 @@ public class BillDaoImpl implements IBillDao {
 			if ("findInOrOutRepertory".equals(findType)) {
 				buffer.append(getRepertoryTotalRows);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`="
-							+ selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum())
-						&& !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`="
-							+ selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName())
-						&& !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%"
-							+ selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id`) a");
 				ps = con.prepareStatement(buffer.toString());
@@ -979,18 +855,13 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findRepertoryDetail".equals(findType)) {
 				buffer.append(getRepertoryDetailTotalRows);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`="
-							+ selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum())
-						&& !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`="
-							+ selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName())
-						&& !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%"
-							+ selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id`) a");
 				ps = con.prepareStatement(buffer.toString());
@@ -1019,29 +890,21 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(selectSupplier);
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" WHERE p.`supplierId`="
-						+ selectBills.getSupplierId());
+				buffer.append(" WHERE p.`supplierId`=" + selectBills.getSupplierId());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`="
-						+ selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND p.`staffId`=" + selectBills.getStaffId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY b.`bills_id`,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -1068,29 +931,21 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(getSupplierTotalRow);
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" WHERE p.`supplierId`="
-						+ selectBills.getSupplierId());
+				buffer.append(" WHERE p.`supplierId`=" + selectBills.getSupplierId());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`="
-						+ selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND p.`staffId`=" + selectBills.getStaffId());
 			}
-			if (!"".equals(selectBills.getStartTime())
-					&& !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime())
-					&& !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '"
-						+ selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '"
-						+ selectBills.getEndTime() + "'");
+			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -1108,8 +963,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<SupplierPaymentInfo> findPaymentInfo(SelectBills selectBills,
-			Page page, String findType) {
+	public List<SupplierPaymentInfo> findPaymentInfo(SelectBills selectBills, Page page, String findType) {
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -1119,25 +973,19 @@ public class BillDaoImpl implements IBillDao {
 			if ("findSupplierPayment".equals(findType)) {
 				buffer.append("SELECT * FROM " + findPaymentInfo);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`="
-							+ selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
-				if (!"".equals(selectBills.getStartTime())
-						&& !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime())
-						&& !selectBills.getEndTime().isEmpty()) {
-					buffer.append(" AND b.`bills_entry_time` >= '"
-							+ selectBills.getStartTime()
-							+ "' AND b.`bills_entry_time` <= '"
-							+ selectBills.getEndTime() + "'");
+				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+					buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+							+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 				}
 				buffer.append(" GROUP BY s.`supplierId`) supplierInfo WHERE totalMoney > 0 "
 						+ "ORDER BY supplierInfo.`supplierId` LIMIT ?,?");
 			} else if ("findSupplierPaymentInfo".equals(findType)) {
 				buffer.append(selectPaymentInfo);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`="
-							+ selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
 				buffer.append(" ORDER BY s.`supplierId` LIMIT ?,?");
 			}
@@ -1167,24 +1015,18 @@ public class BillDaoImpl implements IBillDao {
 			if ("findSupplierPayment".equals(findType)) {
 				buffer.append("SELECT COUNT(*) FROM " + findPaymentInfo);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`="
-							+ selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
-				if (!"".equals(selectBills.getStartTime())
-						&& !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime())
-						&& !selectBills.getEndTime().isEmpty()) {
-					buffer.append(" AND b.`bills_entry_time` >= '"
-							+ selectBills.getStartTime()
-							+ "' AND b.`bills_entry_time` <= '"
-							+ selectBills.getEndTime() + "'");
+				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+					buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
+							+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
 				}
 				buffer.append(" GROUP BY s.`supplierId`) a WHERE totalMoney > 0");
 			} else if ("findSupplierPaymentInfo".equals(findType)) {
 				buffer.append(getPaymentTotalRows);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`="
-							+ selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
 			}
 			con = DBUtil.getConnection();
@@ -1205,8 +1047,7 @@ public class BillDaoImpl implements IBillDao {
 	@Override
 	public int insertPayment(SupplierPayment payment) {
 		int flag = DaoHelper.insertUpdate(
-				"INSERT INTO `pw_supplier_payment`(supplierId,total_money,"
-						+ "payment_date) VALUES(?,?,?)", payment);
+				"INSERT INTO `pw_supplier_payment`(supplierId,total_money," + "payment_date) VALUES(?,?,?)", payment);
 		return flag;
 	}
 
@@ -1222,13 +1063,12 @@ public class BillDaoImpl implements IBillDao {
 			minimumStock = JdbcHelper.getSingleResult(rs, MinimumStock.class);
 			if (minimumStock == null) {
 				flag = DaoHelper.insertUpdate(
-						"INSERT INTO pw_minimum_stock(repertory_id,minimum_quantity)"
-								+ " VALUES(?,?)", stock);
+						"INSERT INTO pw_minimum_stock(repertory_id,minimum_quantity)" + " VALUES(?,?)", stock);
 			} else {
 				stock.setMinimumStockId(minimumStock.getMinimumStockId());
 				flag = DaoHelper.insertUpdate(
-						"UPDATE pw_minimum_stock SET repertory_id=?,minimum_quantity=?"
-								+ " WHERE minimum_stock_id=?", stock);
+						"UPDATE pw_minimum_stock SET repertory_id=?,minimum_quantity=?" + " WHERE minimum_stock_id=?",
+						stock);
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -1240,24 +1080,18 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectMinimumStock(SelectBills selectBills,
-			Page page) {
+	public List<RawMaterialInfo> selectMinimumStock(SelectBills selectBills, Page page) {
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectMinimumStock);
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`="
-						+ selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`="
-						+ selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY p.`warehouseId`,p.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -1281,22 +1115,16 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(getMinimumStockTotalRow);
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`="
-						+ selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum())
-					&& !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`="
-						+ selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`="
-						+ selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName())
-					&& !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%"
-						+ selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());

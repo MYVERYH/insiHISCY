@@ -18,9 +18,13 @@ public class UserDaoImpl implements IUserDao {
 	private PreparedStatement ps = null;
 	private ResultSet rs = null;
 
-	private String findByUserMCAndPassword = "select u.*,s.staffName from pw_user u join pw_user_group g on u.userId=g.userId join pw_staff s "
+	private String findByUserMCAndPassword = "select u.*,s.staffName from pw_user u join pw_user_group g "
+			+ "on u.userId=g.userId join pw_staff s "
 			+ "on g.staffId = s.staffId where u.userName=? and u.userPassword=?";
 	private String updata = "UPDATE pw_user SET userPassword=? WHERE userId=?";
+	private String insert = "INSERT INTO pw_user(userName,userPassword) VALUES(?,?)";
+	private String findByUserNameAndPassword = "SELECT u.*,d.`name` FROM `pw_user` u JOIN `pw_user_detail` d "
+			+ "ON u.`userId` = d.`userId` WHERE u.`userName`=? AND u.`userPassword`=?";
 
 	@Override
 	public List<User> selectAll() {
@@ -35,9 +39,10 @@ public class UserDaoImpl implements IUserDao {
 	}
 
 	@Override
-	public int insert(User t) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int insert(User user) {
+		int flag = 0;
+		flag = DaoHelper.insertUpdate(insert, user);
+		return flag;
 	}
 
 	@Override
@@ -61,6 +66,25 @@ public class UserDaoImpl implements IUserDao {
 			ps = con.prepareStatement(findByUserMCAndPassword);
 			ps.setString(1, userMC);
 			ps.setString(2, password);
+			rs = ps.executeQuery();
+			user = JdbcHelper.getSingleResult(rs, User.class);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return user;
+	}
+
+	@Override
+	public User findByUserNameAndPassword(String userName, String userPassword) {
+		User user = new User();
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement(findByUserNameAndPassword);
+			ps.setString(1, userName);
+			ps.setString(2, userPassword);
 			rs = ps.executeQuery();
 			user = JdbcHelper.getSingleResult(rs, User.class);
 		} catch (SQLException e) {

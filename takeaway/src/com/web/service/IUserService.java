@@ -7,4 +7,6 @@ public interface IUserService extends BaseService<User, Integer> {
 
 	public User findByUserMCAndPassword(String userName, String userPassword);
 	
+	public User findByUserNameAndPassword(String userName, String userPassword);
+	
 }

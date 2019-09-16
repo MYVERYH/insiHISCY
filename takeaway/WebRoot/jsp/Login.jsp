@@ -134,7 +134,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	    			</div>
 	    			<div class="layui-form-item">
 	    				<div class="layui-input-block">
-							<input type="checkbox" name="rememberMe" title="记住我" lay-skin="primary">
+							<input type="checkbox" name="rememberMe" title="记住我" lay-skin="primary" checked>
 						</div>
 	    			</div>
 	    			<div class="layui-form-item" style="padding-left: 13%;">
