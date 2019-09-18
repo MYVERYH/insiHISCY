@@ -158,6 +158,9 @@ public class MainServlet extends HttpServlet {
 		} else if ("FindRepertory".equals(content)) {
 			request.getRequestDispatcher("/servlet/FindRepertoryServlet?type=showFindRepertory").forward(request,
 					response);
+		} else if ("Main".equals(content)) {
+			request.getRequestDispatcher("/servlet/CuisineServlet?type=showCuisine").forward(request,
+					response);
 		}
 	}
 
@@ -259,6 +262,7 @@ public class MainServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		User user = (User) session.getAttribute("user");
 		if (user != null) {
+			request.setAttribute("user", user);
 			request.getRequestDispatcher("/jsp/WMMain.jsp").forward(request, response);
 		} else {
 			request.getRequestDispatcher("/jsp/Login.jsp").forward(request, response);

@@ -16,6 +16,8 @@ public class User implements Serializable {
 	private String userPassword;
 
 	private String staffName;
+	
+	private String name;
 
 	public Integer getUserId() {
 		return userId;
@@ -47,6 +49,14 @@ public class User implements Serializable {
 
 	public void setStaffName(String staffName) {
 		this.staffName = staffName;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 }
