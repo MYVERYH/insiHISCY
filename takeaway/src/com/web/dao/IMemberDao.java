@@ -8,7 +8,7 @@ import com.web.vo.Page;
 
 public interface IMemberDao extends BaseDao<MemberInfo, Integer> {
 	
-	public List<MemberInfo> findMember(String num, String name, Page page);
+	public List<MemberInfo> findMember(String num, String name, Page page);//查询会员信息
 
 	public long getTotalRows(String num, String name);
 	

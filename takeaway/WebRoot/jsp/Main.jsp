@@ -218,7 +218,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
                btn: ['确定', '取消']
             }, function (layerIndex) {
             	layer.close(layerIndex);//关闭提示框
-            	window.location.href = "${ctx}/servlet/MainServlet?type=logOut";                
+            	window.location.href = "${ctx}/servlet/MainServlet?type=logOut&sort=next";                
             });
         }
     </script>

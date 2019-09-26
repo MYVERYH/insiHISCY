@@ -11,16 +11,16 @@ import com.web.vo.RawMaterialInfo;
 
 public interface IDepartmentDao extends BaseDao<Department, Integer> {
 
-	public List<DepartmentInfo> selectAll(Page page);
+	public List<DepartmentInfo> selectAll(Page page);//查询部门信息
 
 	public long getTotalRows();
 	
-	public List<RawMaterialInfo> findRequirement(Page page, int departmentId);
+	public List<RawMaterialInfo> findRequirement(Page page, int departmentId);//查询部门原料需求信息
 
 	public long getTotalRow(int departmentId);
 	
-	public int insert(MaterialRequirement requirement);
+	public int insert(MaterialRequirement requirement);//新增部门原料需求信息
 	
-	public int update(MaterialRequirement requirement);
+	public int update(MaterialRequirement requirement);//修改部门原料需求信息
 
 }

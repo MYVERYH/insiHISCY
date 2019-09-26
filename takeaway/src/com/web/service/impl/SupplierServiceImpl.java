@@ -102,7 +102,7 @@ public class SupplierServiceImpl implements ISupplierService {
 	@Override
 	public String delSupplier(int id) {
 		String str = "";
-		if (supplierDao.delete(id) > 0) {
+		if (supplierDao.delSupplier(id) > 0) {
 			str = "删除成功";
 		} else {
 			str = "删除失败";

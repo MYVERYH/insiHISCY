@@ -113,7 +113,7 @@ public class FindRepertoryServlet extends HttpServlet {
 		SelectBills selectBills = RequestHelper.getSingleRequest(request,
 				SelectBills.class);
 		long totalRows = 0;
-		if ("findNowRepertory".equals(findType)) {
+		if ("findNowRepertory".equals(findType)) {// 查询当前库存
 			List<RawMaterialInfo> infos = billsService.selectNowRepertory(
 					selectBills, page);
 			totalRows = billsService.getNowRepertoryTotalRow(selectBills);
@@ -121,7 +121,7 @@ public class FindRepertoryServlet extends HttpServlet {
 					0, "", totalRows, infos);
 			PublicUtil.jsonObjectReturn(response, layuiJSON);
 		} else if ("findInOrOutRepertory".equals(findType)
-				|| "findRepertoryDetail".equals(findType)) {
+				|| "findRepertoryDetail".equals(findType)) {// 查询库存进销报表或库存明细
 			List<RepertoryInfo> infos = billsService.selectRepertory(
 					selectBills, page, findType);
 			totalRows = billsService.getRepertoryTotalRows(selectBills,
@@ -129,7 +129,7 @@ public class FindRepertoryServlet extends HttpServlet {
 			LayuiJSON<RepertoryInfo> layuiJSON = new LayuiJSON<RepertoryInfo>(
 					0, "", totalRows, infos);
 			PublicUtil.jsonObjectReturn(response, layuiJSON);
-		} else if ("findRepertoryAlarm".equals(findType)) {
+		} else if ("findRepertoryAlarm".equals(findType)) {// 查询报警库存
 			List<RawMaterialInfo> infos = billsService.selectMinimumStock(
 					selectBills, page);
 			if (infos != null) {
@@ -146,7 +146,7 @@ public class FindRepertoryServlet extends HttpServlet {
 	}
 
 	/**
-	 * 供应商供货信息查询
+	 * 供应商供货信息查询 findType查询类型 PublicUti工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -161,7 +161,7 @@ public class FindRepertoryServlet extends HttpServlet {
 		SelectBills selectBills = RequestHelper.getSingleRequest(request,
 				SelectBills.class);
 		long totalRows = 0;
-		if ("findSupplierInfo".equals(findType)) {
+		if ("findSupplierInfo".equals(findType)) {// 查询供应商信息
 			List<BillsInfo> infos = billsService.selectSupplier(selectBills,
 					page);
 			for (BillsInfo info : infos) {
@@ -198,6 +198,7 @@ public class FindRepertoryServlet extends HttpServlet {
 
 	/**
 	 * 新增供应商应付款记录 jsonReturn对象可设置状态和提示文本 payment表单对象(vo)装新增的表格数据
+	 * PublicUti工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -222,6 +223,7 @@ public class FindRepertoryServlet extends HttpServlet {
 
 	/**
 	 * 新增最低库存报警 jsonReturn对象可设置状态和提示文本 stock表单对象(vo)装新增的表格数据
+	 * PublicUti工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response

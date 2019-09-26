@@ -10,25 +10,25 @@ import com.web.vo.Page;
 
 public interface IOrderListDao extends BaseDao<IndentInfo, Integer> {
 
-	public List<IndentInfo> selectAll(String parameter, Page page);
+	public List<IndentInfo> selectAll(String parameter, Page page);//多条件查询订单信息
 
 	public long getTotalRows(String parameter);
 
 	public List<IndentInfo> selectWineGre(int indentId, Page page,
-			String findType);
+			String findType);//根据订单id查询菜品信息
 
 	public long getTotalRows(int indentId);
 
-	public byte[] selectPicture(int id);
+	public byte[] selectPicture(int id);//查询二进制图片信息
 
-	public List<DeliveryStaff> selectPS(boolean state, Page page);
+	public List<DeliveryStaff> selectPS(boolean state, Page page);//查询配送员信息
 	
 	public long getTotalRows(boolean state);
 	
-	public int insertDS(DeliveryStaff deliveryStaff);
+	public int insertDS(DeliveryStaff deliveryStaff);//新增配送信息
 	
-	public int updateDS(DeliveryStaff deliveryStaff);
+	public int updateDS(DeliveryStaff deliveryStaff);//修改配送信息
 	
-	public RatingForm findByID(int indentId);
+	public RatingForm findByID(int indentId);//查询评价信息
 
 }

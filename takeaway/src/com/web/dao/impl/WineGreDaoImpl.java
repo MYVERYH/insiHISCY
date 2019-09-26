@@ -15,10 +15,10 @@ import com.web.dao.IWineGreDao;
 import com.web.po.WineGre;
 import com.web.po.WineGreBig;
 import com.web.po.WineGreSmall;
-import com.web.util.PublicUtil;
 import com.web.util.DBUtil;
 import com.web.util.DaoHelper;
 import com.web.util.JdbcHelper;
+import com.web.util.PublicUtil;
 import com.web.vo.Page;
 
 public class WineGreDaoImpl implements IWineGreDao {
@@ -36,8 +36,10 @@ public class WineGreDaoImpl implements IWineGreDao {
 	private String findSmalll = "select * from sys_winegresmall where wineGreBigId=? limit ?,?";
 	private String getTotalRows = "select count(*) from sys_winegresmall where wineGreBigId=?";
 	private String findSmalllById = "select * from sys_winegresmall where wineGreSmallId=?";
-	private String insertSmalll = "insert into sys_winegresmall(wineGreBigId,wineGreSmallNum,wineGreSmallName) values(?,?,?)";
-	private String updateSmalll = "update sys_winegresmall set wineGreBigId=?,wineGreSmallNum=?,wineGreSmallName=? where wineGreSmallId=?";
+	private String insertSmalll = "insert into sys_winegresmall(wineGreBigId,wineGreSmallNum,"
+			+ "wineGreSmallName) values(?,?,?)";
+	private String updateSmalll = "update sys_winegresmall set wineGreBigId=?,wineGreSmallNum=?,"
+			+ "wineGreSmallName=? where wineGreSmallId=?";
 	private String deleteSmalll = "delete from sys_winegresmall where wineGreSmallId=?";
 	private String selectAll = "select * from sys_winegre where wineGreSmallId=? limit ?,?";
 	private String getTotalRow = "select count(*) from sys_winegre where wineGreSmallId=?";
@@ -47,6 +49,9 @@ public class WineGreDaoImpl implements IWineGreDao {
 	private String update = "update sys_winegre set wineGreSmallId=?,wineGreNum=?,wineGreName=?,"
 			+ "wineGrePrice=?,bigPrice=?,smallPrice=?,memberPrice=?,isDiscount=?";
 	private String delete = "delete from sys_winegre where wineGreId=?";
+	private String findHotWineGres = "SELECT * FROM (SELECT COUNT(*) total,d.`wineGreId`,w.`wineGreName` "
+			+ "FROM `pw_indentdetail` d JOIN `sys_winegre` w ON d.`wineGreId` = w.`wineGreId` "
+			+ "GROUP BY d.`wineGreId`,w.`wineGreName`) a ORDER BY a.total DESC";
 
 	@Override
 	public List<WineGre> selectAll() {
@@ -180,8 +185,7 @@ public class WineGreDaoImpl implements IWineGreDao {
 
 	@Override
 	public WineGreBig findByID(int id) {
-		WineGreBig wineGreBig = DaoHelper.findByID(findBigById,
-				WineGreBig.class, id);
+		WineGreBig wineGreBig = DaoHelper.findByID(findBigById, WineGreBig.class, id);
 		return wineGreBig;
 	}
 
@@ -248,8 +252,7 @@ public class WineGreDaoImpl implements IWineGreDao {
 
 	@Override
 	public WineGreSmall findBYID(int id) {
-		WineGreSmall wineGreSmall = DaoHelper.findByID(findSmalllById,
-				WineGreSmall.class, id);
+		WineGreSmall wineGreSmall = DaoHelper.findByID(findSmalllById, WineGreSmall.class, id);
 		return wineGreSmall;
 	}
 
@@ -359,6 +362,76 @@ public class WineGreDaoImpl implements IWineGreDao {
 			e.printStackTrace();
 		}
 		return bs;
+	}
+
+	@Override
+	public List<WineGre> selectAll(Page page) {
+		List<WineGre> wineGres = new ArrayList<WineGre>();
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement("SELECT * FROM sys_winegre LIMIT ?,?");
+			ps.setInt(1, page.getStartIndex());
+			ps.setInt(2, page.getLimit());
+			rs = ps.executeQuery();
+			wineGres = JdbcHelper.getResult(rs, WineGre.class);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return wineGres;
+	}
+
+	@Override
+	public long getTotalRows() {
+		long totalRows = DaoHelper.getTotalRow("SELECT COUNT(*) FROM sys_winegre");
+		return totalRows;
+	}
+
+	@Override
+	public int findSumById(int id) {
+		int sum = 0;
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement("SELECT COUNT(*) SUM FROM `pw_indent` i JOIN `pw_indentdetail` d "
+					+ "ON i.`indent_id`=d.`indent_id` WHERE i.`order_status_id`!=2 AND d.`wineGreId`=?");
+			ps.setInt(1, id);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				sum = rs.getInt("SUM");
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return sum;
+	}
+
+	@Override
+	public List<WineGre> findHotWineGres() {
+		List<WineGre> wineGres = new ArrayList<WineGre>();
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement(findHotWineGres);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				if (wineGres.size() < 2) {
+					WineGre wineGre = new WineGre();
+					wineGre.setWineGreId(rs.getInt("wineGreId"));
+					wineGre.setWineGreName(rs.getString("wineGreName"));
+					wineGres.add(wineGre);
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return wineGres;
 	}
 
 }

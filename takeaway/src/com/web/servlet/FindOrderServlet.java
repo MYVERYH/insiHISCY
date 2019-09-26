@@ -102,7 +102,7 @@ public class FindOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 查询单据信息
+	 * 查询单据信息 findType查询类型 PublicUti工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -136,7 +136,7 @@ public class FindOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 查询原料信息
+	 * 查询原料信息 findType查询类型 PublicUti工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -152,7 +152,7 @@ public class FindOrderServlet extends HttpServlet {
 				SelectBills.class);
 		List<RawMaterialInfo> materialInfos = new ArrayList<RawMaterialInfo>();
 		long totalRows = 0;
-		if ("findMaterial1".equals(findType)) {
+		if ("findMaterial1".equals(findType)) {//查询单据原料信息
 			materialInfos = billsService.selectOrderMaterial(selectBills, page,
 					findType);
 			for (RawMaterialInfo info : materialInfos) {
@@ -165,7 +165,7 @@ public class FindOrderServlet extends HttpServlet {
 			}
 			totalRows = billsService.getOrderMaterialTotalRow(selectBills,
 					findType);
-		} else if ("findMaterials".equals(findType)) {
+		} else if ("findMaterials".equals(findType)) {//查询单据明细信息
 			int billsId = Integer
 					.parseInt(request.getParameter("billsId") != null ? request
 							.getParameter("billsId") : "0");

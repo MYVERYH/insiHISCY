@@ -53,6 +53,14 @@ public class MainServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 生成验证码图片
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void validateCode(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		// 设置验证码图片的宽高和验证码的长度
@@ -65,12 +73,20 @@ public class MainServlet extends HttpServlet {
 		request.getSession().setAttribute("randomString", keyString);
 	}
 
+	/**
+	 * 登录
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void login(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
-		String userName = request.getParameter("userName");
-		String userPassword = request.getParameter("userPassword");
-		// String validateCode = request.getParameter("validateCode");
-		String rememberMe = request.getParameter("rememberMe");
+		String userName = request.getParameter("userName");//用户名称
+		String userPassword = request.getParameter("userPassword");//用户密码
+		// String validateCode = request.getParameter("validateCode");//验证码
+		String rememberMe = request.getParameter("rememberMe");//是否记住我
 		HttpSession session = request.getSession();
 		try {
 			// if (session.getAttribute("randomString").toString()
@@ -115,12 +131,34 @@ public class MainServlet extends HttpServlet {
 		DBUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	/**
+	 * 退出登录	 * 
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void logOut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String sort = request.getParameter("sort");
 		HttpSession session = request.getSession();
-		session.invalidate();
-		request.getRequestDispatcher("/jsp/Login.jsp").forward(request, response);
+		session.invalidate();//清空session
+		if ("next".equals(sort)) {
+			request.getRequestDispatcher("/jsp/Login.jsp").forward(request, response);
+		} else if ("pre".equals(sort)) {
+			request.getRequestDispatcher("/jsp/WMLogin.jsp").forward(request, response);
+		}
+		
 	}
 
+	/**
+	 * 返回主页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void onMain(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String reception = request.getParameter("Reception");
 		HttpSession session = request.getSession();
@@ -136,40 +174,56 @@ public class MainServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 返回嵌套页面
+	 * content嵌套类型
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void iFrame(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String content = request.getParameter("content");
-		if ("EmployeeData".equals(content)) {
+		if ("EmployeeData".equals(content)) {//员工信息
 			request.getRequestDispatcher("/servlet/StaffServlet?type=showStaffInfo").forward(request, response);
-		} else if ("SetTables".equals(content)) {
+		} else if ("SetTables".equals(content)) {//基础数据信息
 			request.getRequestDispatcher("/jsp/SetTables.jsp").forward(request, response);
-		} else if ("UpdatePassword".equals(content)) {
+		} else if ("UpdatePassword".equals(content)) {//修改密码
 			HttpSession session = request.getSession();
 			User user = (User) session.getAttribute("user");
 			request.setAttribute("user", user);
 			request.getRequestDispatcher("/jsp/EditUser.jsp").forward(request, response);
-		} else if ("SetMaterial".equals(content)) {
+		} else if ("SetMaterial".equals(content)) {//原料信息设置
 			request.getRequestDispatcher("/servlet/RawMaterialServlet?type=showSetMaterial").forward(request, response);
-		} else if ("ManOrder".equals(content)) {
+		} else if ("ManOrder".equals(content)) {//单据录入
 			request.getRequestDispatcher("/servlet/EntryOrderServlet?type=showEntryOrder").forward(request, response);
-		} else if ("BaseInfo".equals(content)) {
+		} else if ("BaseInfo".equals(content)) {//基础信息
 			request.getRequestDispatcher("/servlet/BaseInfoServlet?type=showBaseInfo").forward(request, response);
-		} else if ("FindOrder".equals(content)) {
+		} else if ("FindOrder".equals(content)) {//单据查询
 			request.getRequestDispatcher("/servlet/FindOrderServlet?type=showFindOrder").forward(request, response);
-		} else if ("FindRepertory".equals(content)) {
+		} else if ("FindRepertory".equals(content)) {//库存查询
 			request.getRequestDispatcher("/servlet/FindRepertoryServlet?type=showFindRepertory").forward(request,
 					response);
-		} else if ("Main".equals(content)) {
-			request.getRequestDispatcher("/servlet/CuisineServlet?type=showCuisine").forward(request,
-					response);
+		} else if ("Main".equals(content)) {//外卖主页面
+			request.getRequestDispatcher("/servlet/CuisineServlet?type=showCuisine").forward(request, response);
 		}
 	}
 
+	/**
+	 * 修改密码
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void editUser(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
-		String userName = request.getParameter("userName");
-		String oldPassword = request.getParameter("oldPassword");
-		String userPassword = request.getParameter("userPassword");
+		String userName = request.getParameter("userName");//用户名
+		String oldPassword = request.getParameter("oldPassword");//原密码
+		String userPassword = request.getParameter("userPassword");//新密码
 		if (userName != null && oldPassword != null) {
 			User user = userService.findByUserMCAndPassword(userName,
 					AESUtils.encrypt(oldPassword, Key).toString().trim());
@@ -198,6 +252,15 @@ public class MainServlet extends HttpServlet {
 		DBUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	
+	/**
+	 * 新增用户(用户注册)
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void addUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		User user = RequestHelper.getSingleRequest(request, User.class);
@@ -214,12 +277,20 @@ public class MainServlet extends HttpServlet {
 		}
 		DBUtil.jsonObjectReturn(response, jsonReturn);
 	}
-	
+
+	/**
+	 * 外卖登录
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void wMLogin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
-		String userName = request.getParameter("userName");
-		String userPassword = request.getParameter("userPassword");
-		String rememberMe = request.getParameter("rememberMe");
+		String userName = request.getParameter("userName");//用户名
+		String userPassword = request.getParameter("userPassword");//用户密码
+		String rememberMe = request.getParameter("rememberMe");//自动登录
 		HttpSession session = request.getSession();
 		try {
 			User user = userService.findByUserNameAndPassword(userName,
@@ -257,8 +328,17 @@ public class MainServlet extends HttpServlet {
 		}
 		DBUtil.jsonObjectReturn(response, jsonReturn);
 	}
-	
-	public void onWMMain(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+	/**
+	 * 返回外卖主页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	public void onWMMain(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		User user = (User) session.getAttribute("user");
 		if (user != null) {

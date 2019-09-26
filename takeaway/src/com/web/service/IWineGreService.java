@@ -43,5 +43,13 @@ public interface IWineGreService extends BaseService<WineGre, Integer> {
 	public List<WineGreSmall> smallNumber();
 	
 	public byte[] findPicture(int id);
+	
+	public List<WineGre> selectAll(Page page);
+	
+	public long getTotalRows();
+	
+	public int findSumById(int id);
+	
+	public List<WineGre> findHotWineGres();
 
 }

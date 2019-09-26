@@ -190,5 +190,29 @@ public class WineGreServiceImpl implements IWineGreService {
 		// TODO Auto-generated method stub
 		return wineGreDao.findPicture(id);
 	}
+
+	@Override
+	public List<WineGre> selectAll(Page page) {
+		// TODO Auto-generated method stub
+		return wineGreDao.selectAll(page);
+	}
+
+	@Override
+	public long getTotalRows() {
+		// TODO Auto-generated method stub
+		return wineGreDao.getTotalRows();
+	}
+
+	@Override
+	public int findSumById(int id) {
+		// TODO Auto-generated method stub
+		return wineGreDao.findSumById(id);
+	}
+
+	@Override
+	public List<WineGre> findHotWineGres() {
+		// TODO Auto-generated method stub
+		return wineGreDao.findHotWineGres();
+	}
 	
 }

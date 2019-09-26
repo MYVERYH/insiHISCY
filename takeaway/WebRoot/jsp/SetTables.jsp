@@ -66,7 +66,7 @@
 							lay-data="{
 							height: 199, 
 							id:'big',
-							url:'${ctx}/servlet/SetTablesServlet?type=tabWineGres&wineGreType=wineGreBig',
+							url:'${ctx}/servlet/SetTablesServlet?type=findWineGres&wineGreType=wineGreBig',
 							page: true,
 							limit: 3,//每页默认显示的数量
 							limits: [3,10,20,30,50],
@@ -429,7 +429,7 @@
 				var datas = obj.data;
 				wineGreBigId = datas.wineGreBigId;
 			  	table.reload("small", {
-			  		url: "${ctx}/servlet/SetTablesServlet?type=tabWineGres&wineGreType=wineGreSmall",
+			  		url: "${ctx}/servlet/SetTablesServlet?type=findWineGres&wineGreType=wineGreSmall",
 			  		where: {
 			  			wineGreBigId: datas.wineGreBigId
 			  		},
@@ -509,7 +509,7 @@
 				var datas = obj.data;
 				wineGreSmallId = datas.wineGreSmallId;
 			  	table.reload("wineGre", {
-			  		url: "${ctx}/servlet/SetTablesServlet?type=tabWineGres&wineGreType=wineGre",			  		
+			  		url: "${ctx}/servlet/SetTablesServlet?type=findWineGres&wineGreType=wineGre",			  		
 			  		where: {
 			  			wineGreSmallId: datas.wineGreSmallId
 			  		},

@@ -206,11 +206,11 @@ public class SupplierDaoImpl implements ISupplierDao {
 		try {
 			con = DBUtil.getConnection();
 			con.setAutoCommit(false);
-			ps = con.prepareStatement(delete);
+			ps = con.prepareStatement(deleteDetial);
 			ps.setInt(1, id);
 			int key = ps.executeUpdate();
 			if (key > 0) {
-				ps = con.prepareStatement(deleteDetial);
+				ps = con.prepareStatement(delete);
 				ps.setInt(1, id);
 				flag = ps.executeUpdate();
 				con.commit();

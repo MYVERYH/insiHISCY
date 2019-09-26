@@ -10,10 +10,10 @@ import com.web.vo.StaffInfo;
 
 public interface IStaffDao extends BaseDao<Staff, Integer> {
 	
-	public List<StaffInfo> findAll(Page page);
+	public List<StaffInfo> findAll(Page page);//查询员工信息
 	
 	public long getTotalRow();
 	
-	public List<Position> findAll();
+	public List<Position> findAll();//查询职位信息(绑定下拉框)
 	
 }

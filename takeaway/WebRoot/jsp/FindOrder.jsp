@@ -150,11 +150,10 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findCheckOrder',
 											url: '${ctx}/servlet/FindOrderServlet?type=findOrder&findType=findCheckOrder',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -163,7 +162,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									<tr>
 										<th lay-data="{type: 'radio', hide: 'true'}"></th>
 										<th
-											lay-data="{field: 'billsNum', align: 'center', sort: true, totalRowText: '合计'}">单号</th>
+											lay-data="{field: 'billsNum', align: 'center', sort: true}">单号</th>
 										<th
 											lay-data="{field: 'warehouseName', align: 'center', sort: true}">仓库</th>
 										<th
@@ -219,7 +218,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 511,
 											id: 'findMaterial1',
 											page: true,
 											totalRow: true,
@@ -230,7 +229,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 								<thead>
 									<tr>
 										<th
-											lay-data="{field: 'rawMaterialNum', align: 'center', sort: true}">编号</th>
+											lay-data="{field: 'rawMaterialNum', align: 'center', sort: true, totalRowText: '合计'}">编号</th>
 										<th
 											lay-data="{field: 'rawMaterialName', align: 'center', sort: true}">名称</th>
 										<th
@@ -240,9 +239,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 										<th
 											lay-data="{field: 'rawMaterialPrice', align: 'center', sort: true}">平均单价</th>
 										<th
-											lay-data="{field: 'numberOfProfitAndLoss', align: 'center', sort: true}">损盈数量</th>
+											lay-data="{field: 'numberOfProfitAndLoss', align: 'center', sort: true， totalRow: true}">损盈数量</th>
 										<th
-											lay-data="{field: 'profitAndLossAmount', align: 'center', sort: true}">损盈金额</th>
+											lay-data="{field: 'profitAndLossAmount', align: 'center', sort: true, totalRow: true}">损盈金额</th>
 									</tr>
 								</thead>
 							</table>
@@ -345,10 +344,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 568,
+											height: 471,
 											id: 'findGodownOrders',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -473,10 +471,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 568,
+											height: 471,
 											id: 'findCreditOrders',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -601,10 +598,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 568,
+											height: 471,
 											id: 'findStocksRequisition',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -729,10 +725,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 568,
+											height: 471,
 											id: 'findPickingCreditOrders',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -857,10 +852,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 568,
+											height: 471,
 											id: 'findWarehouseTransferOrder',											
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -954,7 +948,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findMaterial2',
 											page: true,
 											totalRow: true,
@@ -1036,10 +1030,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findMaterial3',
 											page: true,
-											totalRow: true,
 											limit: 10,//每页默认显示的数量
 											method: 'post', //提交方式								
 											}"
@@ -1067,7 +1060,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		<div id="modRawMaterial" style="display: none;">
 			<table class="layui-table"
 				lay-data="{
-						height: 600,
+						height: 471,
 						id: 'findMaterials',
 						page: true,
 						limit: 10,//每页默认显示的数量
@@ -1294,8 +1287,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		layer.open({
 	    	type: 1,//类型
 	      	title: '<i class="layui-icon ' + Class + '"> ' + title + '</i>',
-	      	offset: ['5%','26%'],
-	      	area:['860px','680px'],//定义宽和高
+	      	offset: ['8%','28%'],
+	      	area:['800px','536px'],//定义宽和高
 	      	shadeClose: true,//点击遮罩层关闭
 	      	content: $("#" + modId)//打开的内容
 	    });

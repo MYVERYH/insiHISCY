@@ -55,6 +55,14 @@ public class MemberServlet extends HttpServlet {
 		}
 	}
 	
+	/**
+	 * 返回会员挂失页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void showMemberManagement(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		HttpSession session = request.getSession();
@@ -68,6 +76,14 @@ public class MemberServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 查询会员信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findMemberInfo(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String markClub = request.getParameter("markClub") != null ? request
@@ -88,6 +104,14 @@ public class MemberServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 	
+	/**
+	 * 修改会员卡状态(挂失会员)
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void updateState(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();

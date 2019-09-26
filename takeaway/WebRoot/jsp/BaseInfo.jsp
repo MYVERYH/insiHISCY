@@ -128,7 +128,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>													
 							<table class="layui-table" id="findSupplier"
 								lay-data="{
-										height: 660,
+										height: 471,
 										id: 'findSupplier',
 										url: '${ctx}/servlet/BaseInfoServlet?type=findBaseInfo&baseType=findSupplier',
 										page: true,
@@ -233,15 +233,15 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									<div class="layui-form-item">
 										<label class="layui-form-label">地址</label>
 										<div class="layui-input-block">
-											<input type="text" name="supplierSite" 
-											autocomplete="off" class="layui-input">
+											<input type="text" name="supplierSite" required 
+											lay-verify="fsite" autocomplete="off" class="layui-input">
 										</div>
 									</div>
 									<div class="layui-form-item">
 										<label class="layui-form-label">邮编</label>
 										<div class="layui-input-block">
 											<input type="text" name="supplierMail" required
-												lay-verify="fmail" autocomplete="off" class="layui-input">
+												lay-verify="femail" autocomplete="off" class="layui-input">
 										</div>
 									</div>
 									<div class="layui-form-item">
@@ -275,7 +275,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</div>
 							<table class="layui-table" id="findWarehouse"
 								lay-data="{
-										height: 660,
+										height: 471,
 										id: 'findWarehouse',
 										url: '${ctx}/servlet/BaseInfoServlet?type=findBaseInfo&baseType=findWarehouse',
 										page: true,
@@ -368,11 +368,11 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</div>
 							<table class="layui-table" id="findDepartment"
 								lay-data="{
-										height: 660,
+										height: 471,
 										id: 'findDepartment',
 										url: '${ctx}/servlet/BaseInfoServlet?type=findBaseInfo&baseType=findDepartment',
 										page: true,
-										limit: 5,//每页默认显示的数量	
+										limit: 10,//每页默认显示的数量	
 										method: 'post', //提交方式 									
 										}"
 								lay-filter="findDepartment">
@@ -484,7 +484,12 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						return "请选择一个供应商类型";
 					}
 				},
-				fmail: [/^[1-9]\d{5}$/g, "请输入合法的邮编号码"],
+				fsite: function(value) {
+					if (value.length == 0 || value == "") {
+						return "地址不能为空";
+					}
+				},
+				femail: [/^[1-9]\d{5}$/g, "请输入合法的邮编号码"],
 				ftell: [ /0\d{2,3}-\d{7,8}/, "电话格式为000-00000000" ],
 			});
 			
@@ -512,7 +517,24 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				clear: function() {
 					$("#supplierNum").val("");
 					$("#supplierName").val("");
-					table.reload('findSupplier');
+					var supplierNum = $("#supplierNum").val();
+					var supplierName = $("#supplierName").val();
+					if (supplierNum == undefined) {
+                		supplierNum = "";
+            		}
+            		if (supplierName == undefined) {
+                		supplierName = "";
+            		}
+					//执行重载
+					table.reload('findSupplier', {
+						page: {
+							curr: 1 //重新从第 1 页开始
+						},
+						where: {
+							supplierNum: supplierNum,
+						  	supplierName: supplierName
+						}
+					});
 				},
 				getShowSupplier: function() {
 					$("#formSupplier").resetForm();//重置表单
@@ -565,9 +587,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			            }, function (index) {		
 			            	layer.close(index);
 			            	var returnLength = 0;
-			            	for ( var i = 0; i < data.length; i++) {
+			            	for ( var i = 0; i < data.length; i++) {			            		
 			            		$.ajax({
-				                	url: "${ctx}/servlet/RawMaterialServlet?type=delBaseInfo" + "&supplierId=" + 
+				                	url: "${ctx}/servlet/BaseInfoServlet?type=delBaseInfo&supplierId=" + 
 				                	data[i].supplierId + "&baseType=supplier",		                    
 				                	type: "post",//数据传输通道的类型
 				                    async: false,
@@ -640,7 +662,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			            	var returnLength = 0;
 			            	for ( var i = 0; i < data.length; i++) {
 			            		$.ajax({
-				                	url: "${ctx}/servlet/RawMaterialServlet?type=delBaseInfo" + "&warehouseId=" + 
+				                	url: "${ctx}/servlet/BaseInfoServlet?type=delBaseInfo" + "&warehouseId=" + 
 				                	data[i].warehouseId + "&baseType=warehouse",		                    
 				                	type: "post",//数据传输通道的类型
 				                    async: false,
@@ -707,7 +729,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			            	var returnLength = 0;
 			            	for ( var i = 0; i < data.length; i++) {
 			            		$.ajax({
-				                	url: "${ctx}/servlet/RawMaterialServlet?type=delBaseInfo" + "&departmentId=" + 
+				                	url: "${ctx}/servlet/BaseInfoServlet?type=delBaseInfo" + "&departmentId=" + 
 				                	data[i].departmentId + "&baseType=department",		                    
 				                	type: "post",//数据传输通道的类型
 				                    async: false,

@@ -9,7 +9,7 @@ import com.web.vo.WarehouseInfo;
 
 public interface IWarehouseDao extends BaseDao<Warehouse, Integer> {
 	
-	public List<WarehouseInfo> selectAll(Page page);
+	public List<WarehouseInfo> selectAll(Page page);//查询仓库信息
 	
 	public long getTotalRows();
 

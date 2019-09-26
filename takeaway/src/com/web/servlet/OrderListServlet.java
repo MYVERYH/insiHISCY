@@ -58,6 +58,14 @@ public class OrderListServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 返回订单详情页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void showOrderList(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
@@ -71,6 +79,14 @@ public class OrderListServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 查询订单信息 parameter查询条件 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findIndent(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String parameter = request.getParameter("parameter") != null ? request
@@ -89,6 +105,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
+	/**
+	 * 查询菜品信息 findType查询类别 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findWineGre(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String findType = request.getParameter("findType") != null ? request
@@ -112,6 +136,14 @@ public class OrderListServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 查询菜品图片信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findPicture(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String wineGreId = request.getParameter("wineGreId") != null ? request
@@ -123,6 +155,14 @@ public class OrderListServlet extends HttpServlet {
 		out.close();
 	}
 
+	/**
+	 * 根据id查询订单状态 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findIndentById(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		int indentId = Integer
@@ -133,6 +173,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, info);
 	}
 
+	/**
+	 * 修改订单信息 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void updateIndent(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
@@ -149,6 +197,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	/**
+	 * 查询配送员信息 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findDeliveryStaff(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		boolean state = Boolean
@@ -164,6 +220,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
+	/**
+	 * 新增配送信息 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void insertDelivery(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
@@ -188,6 +252,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	/**
+	 * 根据订单id查询订单评价信息 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findRatingFormByID(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		int indentId = Integer
@@ -198,6 +270,14 @@ public class OrderListServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, ratingForm);
 	}
 
+	/**
+	 * 删除订单信息 PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void delIndent(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();

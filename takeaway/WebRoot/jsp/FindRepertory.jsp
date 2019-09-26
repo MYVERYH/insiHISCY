@@ -135,7 +135,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findNowRepertory',
 											url: '${ctx}/servlet/FindRepertoryServlet?type=findRepertory&findType=findNowRepertory',
 											page: true,
@@ -222,7 +222,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 511,
 											id: 'findInOrOutRepertory',											
 											page: true,
 											totalRow: true,
@@ -314,7 +314,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findRepertoryDetail',											
 											page: true,
 											limit: 10,//每页默认显示的数量
@@ -404,7 +404,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findRepertory',		
 											url: '${ctx}/servlet/FindRepertoryServlet?type=findRepertory&findType=findRepertoryAlarm',
 											page: true,									
@@ -564,10 +564,17 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 										<th
 											lay-data="{field: 'supplierName', align: 'center', sort: true}">供应商名称</th>
 										<th
-											lay-data="{field: 'totalMoney', align: 'center', sort: true}">应付款金额</th>
+											lay-data="{field: 'totalMoney', align: 'center', sort: true, templet: '#hint'}">应付款金额</th>
 									</tr>
 								</thead>
 							</table>
+							<script type="text/html" id="hint">
+								{{#  if(d.totalMoney === 0){ }}
+    								<span style="color: #029f90;">{{ '该时间段已付款' }}</span>
+								{{#  } else { }}
+    								{{ d.totalMoney }}							
+  								{{#  } }}
+							</script>
 						</div>
 					</div>
 					<div class="layui-card">
@@ -696,7 +703,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							</form>
 							<table class="layui-table"
 								lay-data="{
-											height: 618,
+											height: 471,
 											id: 'findSupplierInfo',											
 											page: true,
 											limit: 10,//每页默认显示的数量

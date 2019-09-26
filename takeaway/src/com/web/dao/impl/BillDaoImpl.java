@@ -156,15 +156,11 @@ public class BillDaoImpl implements IBillDao {
 			+ "r.`raw_material_id` JOIN `sys_raw_material_small` rs ON r.`raw_material_small_id` = "
 			+ "rs.`raw_material_small_id` JOIN `sys_raw_material_big` rb ON rs.`raw_material_big_id` = "
 			+ "rb.`raw_material_big_id` JOIN `sys_unit` u ON r.`unitId` = u.`unitId`";
-	private String findPaymentInfo = "(SELECT s.`supplierId`,rb.`raw_material_big_name`,"
-			+ "s.`supplierName`,SUM(d.`raw_material_amount` * r.`raw_material_price`) - (SELECT "
-			+ "SUM(`total_money`) FROM `pw_supplier_payment` WHERE `supplierId` = s.`supplierId` GROUP BY "
-			+ "`supplierId`) totalMoney FROM `pw_supplier` s JOIN `pw_purchase_orders` p "
-			+ "ON s.`supplierId` = p.`supplierId` JOIN `pw_staff` sf ON p.`staffId` = sf.`staffId` "
-			+ "JOIN `pw_bills` b ON p.`bills_id` = b.`bills_id` JOIN `pw_bills_detail` d "
-			+ "ON b.`bills_id` = d.`bills_id` JOIN`pw_raw_material` r "
-			+ "ON d.`raw_material_id` = r.`raw_material_id` "
-			+ "JOIN `sys_raw_material_big` rb ON s.`raw_material_big_id` = rb.`raw_material_big_id`";
+	private String findPaymentInfo = "(SELECT *, SUM(bills_money) total FROM (SELECT s.`supplierId`, "
+			+ "r.`raw_material_big_name`, s.`supplierName`, b.`bills_money`, b.`bills_entry_time` "
+			+ "FROM `pw_supplier` s JOIN `pw_purchase_orders` p ON s.`supplierId` = p.`supplierId` "
+			+ "JOIN `pw_bills` b ON p.`bills_id` = b.`bills_id` JOIN `sys_raw_material_big` r "
+			+ "ON s.`raw_material_big_id` = r.`raw_material_big_id`";
 	private String selectPaymentInfo = "SELECT s.`supplierName`,a.`total_money`,a.`payment_date` "
 			+ "FROM `pw_supplier` s JOIN `pw_supplier_payment` a ON s.`supplierId` = a.`supplierId`";
 	private String getPaymentTotalRows = "SELECT COUNT(*) FROM `pw_supplier` s JOIN `pw_supplier_payment` a"
@@ -268,27 +264,27 @@ public class BillDaoImpl implements IBillDao {
 				ps.setInt(1, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
 				BigDecimal bigDecimal = null;
+				Repertory repertory2 = new Repertory();
 				while (rs.next()) {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
 				if (repertory != null) {
 					double count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
-					BigDecimal decimal = new BigDecimal(count);			
-					ps = con.prepareStatement(updateRepertory);
-					ps.setInt(1, bills.getWarehouseId());
-					ps.setInt(2, billsDetail.getRawMaterialId());
-					ps.setDouble(3, count);
-					ps.setBigDecimal(4, decimal.multiply(bigDecimal));
-					ps.setInt(5, repertory.getRepertoryId());
+					BigDecimal decimal = new BigDecimal(count);
+					repertory2.setRepertoryId(repertory.getRepertoryId());
+					repertory2.setWarehouseId(bills.getWarehouseId());
+					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
+					repertory2.setRawMaterialQuantity(count);
+					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2, updateRepertory) > 0 ? 1 : 0;
 				} else {
 					BigDecimal decimal = new BigDecimal(billsDetail.getRawMaterialAmount());
-					ps = con.prepareStatement(insertRepertory);
-					ps.setInt(1, bills.getWarehouseId());
-					ps.setInt(2, billsDetail.getRawMaterialId());
-					ps.setDouble(3, billsDetail.getRawMaterialAmount());
-					ps.setBigDecimal(4, decimal.multiply(bigDecimal));
+					repertory2.setWarehouseId(bills.getWarehouseId());
+					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
+					repertory2.setRawMaterialQuantity(billsDetail.getRawMaterialAmount());
+					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2, insertRepertory) > 0 ? 1 : 0;
 				}
-				flag = ps.executeUpdate();
 				f += flag;
 			}
 			if (total == f) {
@@ -338,13 +334,13 @@ public class BillDaoImpl implements IBillDao {
 				}
 				if (count > -1) {
 					BigDecimal decimal = new BigDecimal(count);
-					ps = con.prepareStatement(updateRepertory);
-					ps.setInt(1, bills.getWarehouseId());
-					ps.setInt(2, billsDetail.getRawMaterialId());
-					ps.setDouble(3, count);
-					ps.setBigDecimal(4, decimal.multiply(bigDecimal));
-					ps.setInt(5, repertory.getRepertoryId());
-					flag = ps.executeUpdate();
+					Repertory repertory2 = new Repertory();
+					repertory2.setRepertoryId(repertory.getRepertoryId());
+					repertory2.setWarehouseId(bills.getWarehouseId());
+					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
+					repertory2.setRawMaterialQuantity(count);
+					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2, updateRepertory) > 0 ? 1 : 0;
 					f += flag;
 				}
 			}
@@ -378,8 +374,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffId());
@@ -413,8 +409,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffId());
@@ -448,8 +444,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
 				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
@@ -496,8 +492,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
 				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
@@ -612,8 +608,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
 				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
@@ -658,7 +654,7 @@ public class BillDaoImpl implements IBillDao {
 				buffer.append("SELECT COUNT(*) FROM `pw_credit_orders` a JOIN `pw_supplier` s "
 						+ "ON a.`supplierId` =  s.`supplierId`");
 			} else if ("findStocksRequisition".equals(findType)) {
-				buffer.append("SELECT COUNT(*)` FROM `pw_stocks_requisition` a JOIN `pw_department` d "
+				buffer.append("SELECT COUNT(*) FROM `pw_stocks_requisition` a JOIN `pw_department` d "
 						+ "ON a.`departmentId` = d.`departmentId`");
 			} else if ("findPickingCreditOrders".equals(findType)) {
 				buffer.append("SELECT COUNT(*) FROM `pw_picking_credit_orders` a JOIN `pw_department` d "
@@ -676,8 +672,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
 				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
@@ -900,8 +896,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
 				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
@@ -941,8 +937,8 @@ public class BillDaoImpl implements IBillDao {
 			}
 			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
 					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-						+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+						+ selectBills.getEndTime() + "'");
 			}
 			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
 				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
@@ -971,17 +967,30 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer();
 			if ("findSupplierPayment".equals(findType)) {
-				buffer.append("SELECT * FROM " + findPaymentInfo);
+				buffer.append("SELECT *, s.`total` - (CASE WHEN (SELECT sp.`total_money` "
+						+ "FROM `pw_supplier_payment` sp WHERE s.`supplierId` = sp.`supplierId`");
+				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+					if ("2000-01-01".equals(selectBills.getStartTime())
+							&& "2100-12-31".equals(selectBills.getEndTime())) {
+						buffer.append(") IS NULL THEN '0' ELSE (SELECT sp.`total_money` "
+								+ "FROM `pw_supplier_payment` sp WHERE s.`supplierId` = sp.`supplierId`) "
+								+ "END) totalMoney FROM" + findPaymentInfo);
+					} else {
+						buffer.append(" AND sp.`start_date` <= '" + selectBills.getStartTime()
+								+ "' AND sp.`end_date` >= '" + selectBills.getEndTime() + "') IS NULL THEN '0' "
+								+ "ELSE (SELECT sp.`total_money` FROM `pw_supplier_payment` sp WHERE "
+								+ "s.`supplierId` = sp.`supplierId` AND sp.`start_date` <= '"
+								+ selectBills.getStartTime() + "' AND sp.`end_date` >= '" + selectBills.getEndTime()
+								+ "') END) totalMoney FROM" + findPaymentInfo);
+					}
+					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+							+ selectBills.getEndTime() + "') supplier GROUP BY supplierId) s ");
+				}
 				if (selectBills.getSupplierId() > 0) {
 					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
-				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-					buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-							+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
-				}
-				buffer.append(" GROUP BY s.`supplierId`) supplierInfo WHERE totalMoney > 0 "
-						+ "ORDER BY supplierInfo.`supplierId` LIMIT ?,?");
+				buffer.append(" LIMIT ?,?");
 			} else if ("findSupplierPaymentInfo".equals(findType)) {
 				buffer.append(selectPaymentInfo);
 				if (selectBills.getSupplierId() > 0) {
@@ -1013,16 +1022,15 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer();
 			if ("findSupplierPayment".equals(findType)) {
-				buffer.append("SELECT COUNT(*) FROM " + findPaymentInfo);
+				buffer.append("SELECT COUNT(*) FROM " + findPaymentInfo);				
+				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+							+ selectBills.getEndTime() + "') supplier GROUP BY supplierId) s ");
+				}
 				if (selectBills.getSupplierId() > 0) {
 					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
 				}
-				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-					buffer.append(" AND b.`bills_entry_time` >= '" + selectBills.getStartTime()
-							+ "' AND b.`bills_entry_time` <= '" + selectBills.getEndTime() + "'");
-				}
-				buffer.append(" GROUP BY s.`supplierId`) a WHERE totalMoney > 0");
 			} else if ("findSupplierPaymentInfo".equals(findType)) {
 				buffer.append(getPaymentTotalRows);
 				if (selectBills.getSupplierId() > 0) {

@@ -70,14 +70,16 @@ public class EntryOrderServlet extends HttpServlet {
 	public void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String type = request.getParameter("type");
-		Class<?> servlet = this.getClass();
-		Method[] methods = servlet.getDeclaredMethods();
-		for (Method method : methods) {
-			String methodName = method.getName();			
-			if (methodName.equals(type)) {
+		Class<?> servletClass = this.getClass();//获取当前ServletClass类(即EntryOrderServlet.class)
+		Method[] methods = servletClass.getDeclaredMethods();////获取servletClass类里面所有方法，即方法数组
+		for (Method method : methods) {//foreach循环遍历每一个方法
+			String methodName = method.getName();//获取方法名称
+			if (methodName.equals(type)) {//判断方法名称是否和页面type值相同
 				try {
 					System.out.println("方法名：" + methodName);
-					method.invoke(servlet.newInstance(), request, response);
+					//调用方法：servletClass.newInstance()实例化方法(相当于new 一个对象)，
+					//request、response调用方法需要的参数
+					method.invoke(servletClass.newInstance(), request, response);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -113,7 +115,7 @@ public class EntryOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 查询单据下的原料信息
+	 * 查询单据下的原料信息 findType查询类型信息 PublicUtil工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -252,6 +254,14 @@ public class EntryOrderServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
+	/**
+	 * 绑定下拉框信息 optionType绑定类型 PublicUtil工具类，用于response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void smallOption(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String optionType = request.getParameter("optionType");
@@ -282,6 +292,7 @@ public class EntryOrderServlet extends HttpServlet {
 	/***
 	 * 新增单据信息 bills 单据信息 billsDetails 单据明细集合 
 	 * order (采购、配送、入库、退货、领料、领退、调拨、盘点)单据信息
+	 * PublicUtil工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -441,7 +452,7 @@ public class EntryOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 查询单据信息
+	 * 查询单据信息 orderType单据类型，用于判断查询单据信息 PublicUtil工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response
@@ -468,7 +479,7 @@ public class EntryOrderServlet extends HttpServlet {
 			orderInfos = orderService.findStocksRequisition(page);
 			totalRows = orderService.getStocksRequisitionRow();
 		}
-		if (orderInfos != null) {
+		if (orderInfos != null) {// 判断单据信息是否为空
 			for (OrderInfo orderInfo : orderInfos) {
 				// 转换时间格式yyyy-MM-dd
 				orderInfo.setBillsEntryTimes(orderInfo.getBillsEntryTime());
@@ -479,14 +490,22 @@ public class EntryOrderServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
+	/**
+	 * 新增或修改信息 addType新增类型，用于判断新增修改或删除信息 msg变量是返回提示信息
+	 * PublicUtil工具类，response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void addEidtSave(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		String addType = request.getParameter("addType");
 		String msg = new String();
 		if (addType != null) {
-			if ("addCheck".equals(addType)) {
-				// 新增盘点信息
+			if ("addCheck".equals(addType)) {// 新增盘点信息				
 				Check check = RequestHelper.getSingleRequest(request,
 						Check.class);
 				Check check2 = orderService.selectCheck(check.getWarehouseId(),
@@ -511,8 +530,7 @@ public class EntryOrderServlet extends HttpServlet {
 						jsonReturn.setMsg(msg);
 					}
 				}
-			} else if ("delCheck".equals(addType)) {
-				// 删除盘点信息
+			} else if ("delCheck".equals(addType)) {// 删除盘点信息				
 				int checkId = Integer
 						.parseInt(request.getParameter("checkId") != null ? request
 								.getParameter("checkId") : "0");
@@ -553,7 +571,7 @@ public class EntryOrderServlet extends HttpServlet {
 	}
 
 	/***
-	 * 查询库存原料数量
+	 * 查询库存原料数量 PublicUtil工具类，response响应返回页面
 	 * 
 	 * @param request
 	 * @param response

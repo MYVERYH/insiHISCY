@@ -25,7 +25,6 @@ import com.web.service.impl.RawMaterialServiceImpl;
 import com.web.service.impl.StaffServiceImpl;
 import com.web.service.impl.SupplierServiceImpl;
 import com.web.service.impl.WarehouseServiceImpl;
-import com.web.util.DBUtil;
 import com.web.util.PublicUtil;
 import com.web.util.RequestHelper;
 import com.web.vo.DepartmentInfo;
@@ -72,6 +71,14 @@ public class BaseInfoServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 返回基础数据页面并准备绑定下拉框信息 bigs原料大类信息 staffs员工信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void showBaseInfo(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		List<RawMaterialBig> bigs = materialService.finBig();
@@ -82,25 +89,34 @@ public class BaseInfoServlet extends HttpServlet {
 				response);
 	}
 
+	/**
+	 * 查询基础数据，包括仓库信息、部门信息和供应商信息 baseType基础数据类型，用来判断需要查询信息
+	 * page分页po,里面包含分页开始索引、那一页和每页显示的行数 PublicUti工具类，用于response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void findBaseInfo(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String baseType = request.getParameter("baseType");
 		Page page = RequestHelper.getSingleRequest(request, Page.class);
 		page.setStartIndex(page.getPage(), page.getLimit());
-		if ("findWarehouse".equals(baseType)) {
+		if ("findWarehouse".equals(baseType)) {// 查询仓库信息
 			List<WarehouseInfo> infos = warehouseService.selectAll(page);
 			long totalRows = warehouseService.getTotalRows();
 			LayuiJSON<WarehouseInfo> layuiJSON = new LayuiJSON<WarehouseInfo>(
 					0, "", totalRows, infos);
 			PublicUtil.jsonObjectReturn(response, layuiJSON);
-		} else if ("findDepartment".equals(baseType)) {
+		} else if ("findDepartment".equals(baseType)) {// 查询部门信息
 			List<DepartmentInfo> departments = departmentService
 					.selectAll(page);
 			long totalRows = departmentService.getTotalRows();
 			LayuiJSON<DepartmentInfo> layuiJSON = new LayuiJSON<DepartmentInfo>(
 					0, "", totalRows, departments);
 			PublicUtil.jsonObjectReturn(response, layuiJSON);
-		} else if ("findSupplier".equals(baseType)) {
+		} else if ("findSupplier".equals(baseType)) {// 查询供应商信息
 			String supplierNum = request.getParameter("supplierNum") != null ? request
 					.getParameter("supplierNum") : "";
 			String supplierName = request.getParameter("supplierName") != null ? request
@@ -115,12 +131,21 @@ public class BaseInfoServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 新增或修改信息，包括仓库、部门和供应商 baseType基础数据类型，用来判断需要新增的信息 jsonReturn返回执行状态和提示信息
+	 * PublicUti工具类, response响应返回页面
+	 * 
+	 * @param request
+	 * @param responses
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void addEidtSave(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		String baseType = request.getParameter("baseType");
 		String msg = new String();
-		if ("warehouse".equals(baseType)) {
+		if ("warehouse".equals(baseType)) {//新增或修改仓库信息
 			Warehouse warehouse = RequestHelper.getSingleRequest(request,
 					Warehouse.class);
 			if (warehouse.getWarehouseId() == null) {
@@ -142,7 +167,7 @@ public class BaseInfoServlet extends HttpServlet {
 					jsonReturn.setMsg(msg + "!");
 				}
 			}
-		} else if ("department".equals(baseType)) {
+		} else if ("department".equals(baseType)) {//新增或修改部门信息
 			Department department = RequestHelper.getSingleRequest(request,
 					Department.class);
 			if (department.getDepartmentId() == null) {
@@ -164,7 +189,7 @@ public class BaseInfoServlet extends HttpServlet {
 					jsonReturn.setMsg(msg + "!");
 				}
 			}
-		} else if ("supplier".equals(baseType)) {
+		} else if ("supplier".equals(baseType)) {//新增或修改供应商
 			Supplier supplier = RequestHelper.getSingleRequest(request,
 					Supplier.class);
 			SupplierDetail detail = RequestHelper.getSingleRequest(request,
@@ -194,23 +219,32 @@ public class BaseInfoServlet extends HttpServlet {
 		PublicUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	/**
+	 * 删除基础信息 baseType基础数据类型，用于判断删除仓库、部门和供应商信息 jsonReturn返回执行状态和提示信息
+	 * PublicUti工具类, response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void delBaseInfo(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		String baseType = request.getParameter("baseType");
 		String msg = new String();
-		if ("department".equals(baseType)) {
+		if ("department".equals(baseType)) {//删除部门信息
 			int id = Integer.parseInt(request.getParameter("departmentId")
 					.toString());
 			msg = departmentService.delete(id);
-		} else if ("warehouse".equals(baseType)) {
+		} else if ("warehouse".equals(baseType)) {//删除仓库信息
 			int id = Integer.parseInt(request.getParameter("warehouseId")
 					.toString());
 			msg = warehouseService.delete(id);
-		} else if ("supplier".equals(baseType)) {
+		} else if ("supplier".equals(baseType)) {//删除供应商信息
 			int id = Integer.parseInt(request.getParameter("supplierId")
 					.toString());
-			msg = supplierService.delete(id);
+			msg = supplierService.delSupplier(id);
 		}
 		if ("删除成功".equals(msg)) {
 			jsonReturn.setState(true);
@@ -219,13 +253,24 @@ public class BaseInfoServlet extends HttpServlet {
 			jsonReturn.setState(false);
 			jsonReturn.setMsg(msg + "!");
 		}
+		PublicUtil.jsonObjectReturn(response, jsonReturn);
 	}
 
+	/**
+	 * 自动生成编号
+	 * baseType基础数据类型，用于判断获取仓库、部门和供应商编号
+	 * PublicUti工具类, response响应返回页面
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	public void getNumber(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 		String baseType = request.getParameter("baseType");
 		String num = new String();
-		if ("warehouse".equals(baseType)) {
+		if ("warehouse".equals(baseType)) {//生成仓库编号
 			List<Warehouse> warehouses = warehouseService.selectAll();
 			if (warehouses.size() != 0) {
 				num = warehouses.get(warehouses.size() - 1).getWarehouseNum();
@@ -238,8 +283,8 @@ public class BaseInfoServlet extends HttpServlet {
 			}
 			Warehouse warehouse = new Warehouse();
 			warehouse.setWarehouseNum(num);
-			DBUtil.jsonObjectReturn(response, warehouse);
-		} else if ("supplier".equals(baseType)) {
+			PublicUtil.jsonObjectReturn(response, warehouse);
+		} else if ("supplier".equals(baseType)) {//生成供应商编号
 			List<Supplier> suppliers = supplierService.selectAll();
 			if (suppliers.size() != 0) {
 				num = suppliers.get(suppliers.size() - 1).getSupplierNum();
@@ -252,7 +297,7 @@ public class BaseInfoServlet extends HttpServlet {
 			}
 			Supplier supplier = new Supplier();
 			supplier.setSupplierNum(num);
-			DBUtil.jsonObjectReturn(response, supplier);
+			PublicUtil.jsonObjectReturn(response, supplier);
 		}
 	}
 }

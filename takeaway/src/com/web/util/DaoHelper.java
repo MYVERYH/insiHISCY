@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,80 +70,72 @@ public class DaoHelper {
 				cellNames = list.get(0).split(",");// 通过逗号分割称字段数组
 			}
 			Class<?> objClass = obj.getClass();
-			for (int i = 0; i < cellNames.length; i++) {
-				String cellName = "";
-				if (cellNames[i].contains("=?")) {
-					cellName = cellNames[i].replace("=?", "");
-				} else if (cellNames[i].contains(" = ?")) {
-					cellName = cellNames[i].replace(" = ?", "");
-				} else {
-					cellName = cellNames[i];
-				}
-				if (cellName != "" && !"".equals(cellName)) {
-					// 获取字段名
-					cellName = toJavaField(cellName);
-					// 首字母大写
-					String firstBig = cellName.substring(0, 1).toUpperCase() + cellName.substring(1);
-					// 首字母小写
-					String firstSmall = cellName.substring(0, 1).toLowerCase() + cellName.substring(1);
-					// 获取字段数据类型
-					Class<?> type = objClass.getDeclaredField(firstSmall).getType();
-					if (type == null) {// 判断通过首字母小写的字段是否获取到数据类型
-						type = objClass.getDeclaredField(firstBig).getType();
+			synchronized (objClass) {
+				for (int i = 0; i < cellNames.length; i++) {
+					String cellName = "";
+					if (cellNames[i].contains("=?")) {
+						cellName = cellNames[i].replace("=?", "");
+					} else if (cellNames[i].contains(" = ?")) {
+						cellName = cellNames[i].replace(" = ?", "");
+					} else {
+						cellName = cellNames[i];
 					}
-					// ---获取getter方法
-					Method getMethod = objClass.getMethod("get" + firstBig);
-					String value = "";
-					try {
-						value = getMethod.invoke(obj).toString();
-						if (type.isAssignableFrom(String.class)) {
-							if (!"".equals(value) && !value.isEmpty()) {
-								value = value.trim();
-							}
-							ps.setString(i + 1, value);
-						} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
-							ps.setInt(i + 1, Integer.parseInt(value));
-						} else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
-							ps.setDouble(i + 1, Double.parseDouble(value));
-						} else if (type.isAssignableFrom(BigDecimal.class)) {
-							BigDecimal bigDecimal = new BigDecimal(value);
-							bigDecimal = bigDecimal.setScale(2, BigDecimal.ROUND_DOWN);
-							ps.setBigDecimal(i + 1, bigDecimal);
-						} else if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
-							ps.setBoolean(i + 1, Boolean.parseBoolean(value));
-						} else if (type.isAssignableFrom(java.util.Date.class) || type.isAssignableFrom(Date.class)) {
-							// SimpleDateFormat dateFormat = new
-							// SimpleDateFormat("yyyy-MM-dd");
-							// java.util.Date date = dateFormat.parse(value);
-							// String strDate = dateFormat.format(date);
-							// ps.setDate(i + 1, new
-							// Date(dateFormat.parse(strDate).getTime()));
-							@SuppressWarnings("deprecation")
-							java.util.Date date = new java.util.Date(value);
-							SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-							String strDate = dateFormat.format(date);
-							ps.setDate(i + 1, new Date(dateFormat.parse(strDate).getTime()));
-						} else if (type.isAssignableFrom(Timestamp.class)) {
-							// SimpleDateFormat dateFormat = new
-							// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-							// java.util.Date date = dateFormat.parse(value);
-							// String strDate = dateFormat.format(date);
-							// Timestamp timestamp = new
-							// Timestamp(dateFormat.parse(strDate).getTime());
-							// ps.setTimestamp(i + 1, timestamp);
-							@SuppressWarnings("deprecation")
-							java.util.Date date = new java.util.Date(value);
-							SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-							String strDate = dateFormat.format(date);
-							Timestamp timestamp = new Timestamp(dateFormat.parse(strDate).getTime());
-							ps.setTimestamp(i + 1, timestamp);
-						} else if (type.isAssignableFrom(byte[].class)) {
-							byte[] bs = toByteArray(getMethod.invoke(obj));
-							InputStream in = new ByteArrayInputStream(bs);
-							ps.setBinaryStream(i + 1, in, in.available());
+					if (cellName != "" && !"".equals(cellName)) {
+						// 获取字段名
+						cellName = toJavaField(cellName);
+						// 首字母大写
+						String firstBig = cellName.substring(0, 1).toUpperCase() + cellName.substring(1);
+						// 首字母小写
+						String firstSmall = cellName.substring(0, 1).toLowerCase() + cellName.substring(1);
+						// 获取字段数据类型
+						Class<?> type = objClass.getDeclaredField(firstSmall).getType();
+						if (type == null) {// 判断通过首字母小写的字段是否获取到数据类型
+							type = objClass.getDeclaredField(firstBig).getType();
 						}
-					} catch (NullPointerException e) {
-						ps.setString(i + 1, "");
+						// ---获取getter方法
+						Method getMethod = objClass.getMethod("get" + firstBig);
+						String value = "";
+						try {
+							value = getMethod.invoke(obj).toString();
+							if (type.isAssignableFrom(String.class)) {
+								if (!"".equals(value) && !value.isEmpty()) {
+									value = value.trim();
+								}
+								ps.setString(i + 1, value);
+							} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
+								ps.setInt(i + 1, Integer.parseInt(value));
+							} else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
+								ps.setDouble(i + 1, Double.parseDouble(value));
+							} else if (type.isAssignableFrom(BigDecimal.class)) {
+								BigDecimal bigDecimal = new BigDecimal(value);
+								bigDecimal = bigDecimal.setScale(2, BigDecimal.ROUND_DOWN);
+								ps.setBigDecimal(i + 1, bigDecimal);
+							} else if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
+								ps.setBoolean(i + 1, Boolean.parseBoolean(value));
+							} else if (type.isAssignableFrom(java.util.Date.class)
+									|| type.isAssignableFrom(Date.class)) {
+								SimpleDateFormat dateFormat1 = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy",
+										Locale.ENGLISH);
+								java.util.Date date = dateFormat1.parse(value);
+								SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+								String strDate = dateFormat.format(date);
+								ps.setDate(i + 1, new Date(dateFormat.parse(strDate).getTime()));
+							} else if (type.isAssignableFrom(Timestamp.class)) {
+								SimpleDateFormat dateFormat1 = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy",
+										Locale.ENGLISH);
+								java.util.Date date = dateFormat1.parse(value);
+								SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+								String strDate = dateFormat.format(date);
+								Timestamp timestamp = new Timestamp(dateFormat.parse(strDate).getTime());
+								ps.setTimestamp(i + 1, timestamp);
+							} else if (type.isAssignableFrom(byte[].class)) {
+								byte[] bs = toByteArray(getMethod.invoke(obj));
+								InputStream in = new ByteArrayInputStream(bs);
+								ps.setBinaryStream(i + 1, in, in.available());
+							}
+						} catch (NullPointerException e) {
+							ps.setString(i + 1, "");
+						}
 					}
 				}
 			}
@@ -207,63 +200,70 @@ public class DaoHelper {
 				}
 				cellNames = list.get(0).split(",");
 			}
-			Class<?> class1 = obj.getClass();
-			// 反射获取所有字段
-			Field[] fields = class1.getDeclaredFields();
-			for (int i = 0; i < cellNames.length; i++) {
-				for (Field field : fields) {
-					// 获取字段名
-					String name = field.getName();
-					// 获取字段数据类型
-					Class<?> type = class1.getDeclaredField(name).getType();
-					// 首字母大写
-					String firstBig = name.substring(0, 1).toUpperCase() + name.substring(1);
-					// 首字母小写
-					String firstSmall = name.substring(0, 1).toLowerCase() + name.substring(1);
-					String cellName = cellNames[i].replace("=?", "");
-					cellName = toJavaField(cellName);
-					if (firstBig.equals(cellName) || firstSmall.equals(cellName)) {
-						// ---获取getter方法
-						Method getMethods = class1.getMethod("get" + firstBig);
-						String value = "";
-						try {
-							value = getMethods.invoke(obj).toString();
-							if (type.isAssignableFrom(String.class)) {
-								if (!"".equals(value) && !value.isEmpty()) {
-									value = value.trim();
-									ps.setString(i + 1, value);
+			Class<?> objClass = obj.getClass();
+			synchronized (objClass) {
+				// 反射获取所有字段
+				Field[] fields = objClass.getDeclaredFields();
+				for (int i = 0; i < cellNames.length; i++) {
+					for (Field field : fields) {
+						// 获取字段名
+						String name = field.getName();
+						// 获取字段数据类型
+						Class<?> type = objClass.getDeclaredField(name).getType();
+						// 首字母大写
+						String firstBig = name.substring(0, 1).toUpperCase() + name.substring(1);
+						// 首字母小写
+						String firstSmall = name.substring(0, 1).toLowerCase() + name.substring(1);
+						String cellName = cellNames[i].replace("=?", "");
+						cellName = toJavaField(cellName);
+						if (firstBig.equals(cellName) || firstSmall.equals(cellName)) {
+							// ---获取getter方法
+							Method getMethods = objClass.getMethod("get" + firstBig);
+							String value = "";
+							try {
+								value = getMethods.invoke(obj).toString();
+								if (type.isAssignableFrom(String.class)) {
+									if (!"".equals(value) && !value.isEmpty()) {
+										value = value.trim();
+										ps.setString(i + 1, value);
+									}
+								} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
+									ps.setInt(i + 1, Integer.parseInt(value));
+								} else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
+									ps.setDouble(i + 1, Double.parseDouble(value));
+								} else if (type.isAssignableFrom(BigDecimal.class)) {
+									BigDecimal bigDecimal = new BigDecimal(value);
+									bigDecimal = bigDecimal.setScale(2, BigDecimal.ROUND_DOWN);
+									ps.setBigDecimal(i + 1, bigDecimal);
+								} else if (type.isAssignableFrom(Boolean.class)
+										|| type.isAssignableFrom(boolean.class)) {
+									ps.setBoolean(i + 1, Boolean.parseBoolean(value));
+								} else if (type.isAssignableFrom(java.util.Date.class)
+										|| type.isAssignableFrom(Date.class)) {
+									SimpleDateFormat dateFormat1 = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy",
+											Locale.ENGLISH);
+									java.util.Date date = dateFormat1.parse(value);
+									SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+									String strDate = dateFormat.format(date);
+									ps.setDate(i + 1, new Date(dateFormat.parse(strDate).getTime()));
+								} else if (type.isAssignableFrom(Timestamp.class)) {
+									SimpleDateFormat dateFormat1 = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy",
+											Locale.ENGLISH);
+									java.util.Date date = dateFormat1.parse(value);
+									SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+									String strDate = dateFormat.format(date);
+									Timestamp timestamp = new Timestamp(dateFormat.parse(strDate).getTime());
+									ps.setTimestamp(i + 1, timestamp);
+								} else if (type.isAssignableFrom(byte[].class)) {
+									byte[] bs = toByteArray(getMethods.invoke(obj));
+									InputStream in = new ByteArrayInputStream(bs);
+									ps.setBinaryStream(i + 1, in, in.available());
 								}
-							} else if (type.isAssignableFrom(int.class) || type.isAssignableFrom(Integer.class)) {
-								ps.setInt(i + 1, Integer.parseInt(value));
-							} else if (type.isAssignableFrom(Double.class) || type.isAssignableFrom(double.class)) {
-								ps.setDouble(i + 1, Double.parseDouble(value));
-							} else if (type.isAssignableFrom(BigDecimal.class)) {
-								BigDecimal bigDecimal = new BigDecimal(value);
-								bigDecimal = bigDecimal.setScale(2, BigDecimal.ROUND_DOWN);
-								ps.setBigDecimal(i + 1, bigDecimal);
-							} else if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
-								ps.setBoolean(i + 1, Boolean.parseBoolean(value));
-							} else if (type.isAssignableFrom(java.util.Date.class)
-									|| type.isAssignableFrom(Date.class)) {
-								SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-								java.util.Date date = dateFormat.parse(value);
-								String strDate = dateFormat.format(date);
-								ps.setDate(i + 1, new Date(dateFormat.parse(strDate).getTime()));
-							} else if (type.isAssignableFrom(Timestamp.class)) {
-								SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-								java.util.Date date = dateFormat.parse(value);
-								String strDate = dateFormat.format(date);
-								Timestamp timestamp = new Timestamp(dateFormat.parse(strDate).getTime());
-								ps.setTimestamp(i + 1, timestamp);
-							} else if (type.isAssignableFrom(byte[].class)) {
-								byte[] bs = toByteArray(getMethods.invoke(obj));
-								InputStream in = new ByteArrayInputStream(bs);
-								ps.setBinaryStream(i + 1, in, in.available());
+							} catch (NullPointerException e) {
+								ps.setString(i + 1, "");
 							}
-						} catch (NullPointerException e) {
-							ps.setString(i + 1, "");
+							break;
 						}
-						break;
 					}
 				}
 			}
