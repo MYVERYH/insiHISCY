@@ -13,7 +13,7 @@ public class BillsDetail implements Serializable {
 	private Integer billsDetailId;
 	private Integer billsId;
 	private Integer rawMaterialId;
-	private Double rawMaterialAmount;
+	private Integer rawMaterialAmount;
 	private String remark = "";
 	private BigDecimal totalPrice;
 
@@ -41,11 +41,11 @@ public class BillsDetail implements Serializable {
 		this.rawMaterialId = rawMaterialId;
 	}
 
-	public Double getRawMaterialAmount() {
+	public Integer getRawMaterialAmount() {
 		return rawMaterialAmount;
 	}
 
-	public void setRawMaterialAmount(Double rawMaterialAmount) {
+	public void setRawMaterialAmount(Integer rawMaterialAmount) {
 		this.rawMaterialAmount = rawMaterialAmount;
 	}
 

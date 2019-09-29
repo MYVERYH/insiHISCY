@@ -62,23 +62,27 @@ public class EntryOrderServlet extends HttpServlet {
 	private IOrderService orderService = new OrderServiceImpl();
 	private IBillsService billsService = new BillsServiceImpl();
 
-	public void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doPost(request, response);
 	}
 
-	public void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// 解决中文乱码
+		response.setContentType("text/html;charset=utf-8");
+		// 请求解决乱码
+		request.setCharacterEncoding("utf-8");
+		// 响应解决乱码
+		response.setCharacterEncoding("utf-8");
 		String type = request.getParameter("type");
-		Class<?> servletClass = this.getClass();//获取当前ServletClass类(即EntryOrderServlet.class)
-		Method[] methods = servletClass.getDeclaredMethods();////获取servletClass类里面所有方法，即方法数组
-		for (Method method : methods) {//foreach循环遍历每一个方法
-			String methodName = method.getName();//获取方法名称
-			if (methodName.equals(type)) {//判断方法名称是否和页面type值相同
+		Class<?> servletClass = this.getClass();// 获取当前ServletClass类(即EntryOrderServlet.class)
+		Method[] methods = servletClass.getDeclaredMethods();//// 获取servletClass类里面所有方法，即方法数组
+		for (Method method : methods) {// foreach循环遍历每一个方法
+			String methodName = method.getName();// 获取方法名称
+			if (methodName.equals(type)) {// 判断方法名称是否和页面type值相同
 				try {
 					System.out.println("方法名：" + methodName);
-					//调用方法：servletClass.newInstance()实例化方法(相当于new 一个对象)，
-					//request、response调用方法需要的参数
+					// 调用方法：servletClass.newInstance()实例化方法(相当于new 一个对象)，
+					// request、response调用方法需要的参数
 					method.invoke(servletClass.newInstance(), request, response);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
@@ -96,8 +100,8 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void showEntryOrder(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void showEntryOrder(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		List<Supplier> suppliers = supplierService.selectAll();
 		List<Staff> staffs = staffService.selectAll();
 		List<Warehouse> warehouses = warehouseService.selectAll();
@@ -110,8 +114,7 @@ public class EntryOrderServlet extends HttpServlet {
 		request.setAttribute("departments", departments);
 		request.setAttribute("bigs", bigs);
 		request.setAttribute("units", units);
-		request.getRequestDispatcher("/jsp/EntryOrder.jsp").forward(request,
-				response);
+		request.getRequestDispatcher("/jsp/EntryOrder.jsp").forward(request, response);
 	}
 
 	/***
@@ -122,135 +125,107 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void findMaterial(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void findMaterial(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		String findType = request.getParameter("findType");
 		Page page = RequestHelper.getSingleRequest(request, Page.class);
 		page.setStartIndex(page.getPage(), page.getLimit());
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		long totalRows = 0;
 		if ("findMaterial".equals(findType)) {// 查询供应商供应所有原料信息
-			int supplierId = Integer.parseInt(request
-					.getParameter("supplierId") != null ? request
-					.getParameter("supplierId") : "0");
+			int supplierId = Integer
+					.parseInt(request.getParameter("supplierId") != null ? request.getParameter("supplierId") : "0");
 			infos = rawMaterialService.selectAll(page, supplierId);
 			totalRows = rawMaterialService.getTotalRows(supplierId);
 		} else if ("findMaterial2".equals(findType)) {// 查询采购单原料信息
-			int purchaseOrdersId = Integer.parseInt(request
-					.getParameter("purchaseOrdersId") != null ? request
-					.getParameter("purchaseOrdersId") : "0");
+			int purchaseOrdersId = Integer.parseInt(
+					request.getParameter("purchaseOrdersId") != null ? request.getParameter("purchaseOrdersId") : "0");
 			infos = orderService.findMaterial(page, purchaseOrdersId);
 			totalRows = orderService.getMaterialRow(purchaseOrdersId);
 		} else if ("findPSMaterial".equals(findType)) {// 查询配送单原料信息
-			int dispatchingOrdersId = Integer.parseInt(request
-					.getParameter("dispatchingOrdersId") != null ? request
-					.getParameter("dispatchingOrdersId") : "0");
-			int warehouseId = Integer.parseInt(request
-					.getParameter("warehouseId") != null ? request
-					.getParameter("warehouseId") : "0");
+			int dispatchingOrdersId = Integer.parseInt(request.getParameter("dispatchingOrdersId") != null
+					? request.getParameter("dispatchingOrdersId") : "0");
+			int warehouseId = Integer
+					.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
 			infos = orderService.findPSMaterial(page, dispatchingOrdersId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					BigDecimal bigDecimal = new BigDecimal(
-							info.getRawMaterialAmount());
-					info.setTotalPrice(bigDecimal.multiply(info
-							.getRawMaterialPrice()));
-					info.setReportAmount(orderService.getRepertoryAmount(
-							warehouseId, info.getRawMaterialId()));
+					BigDecimal bigDecimal = new BigDecimal(info.getRawMaterialAmount());
+					info.setTotalPrice(bigDecimal.multiply(info.getRawMaterialPrice()));
+					info.setReportAmount(orderService.getRepertoryAmount(warehouseId, info.getRawMaterialId()));
 				}
 			}
 			totalRows = orderService.getPSMaterialRow(dispatchingOrdersId);
 		} else if ("findRKMaterial".equals(findType)) {// 查询入库单原料信息
-			int godownOrdersId = Integer.parseInt(request
-					.getParameter("godownOrdersId") != null ? request
-					.getParameter("godownOrdersId") : "0");
-			int warehouseId = Integer.parseInt(request
-					.getParameter("warehouseId") != null ? request
-					.getParameter("warehouseId") : "0");
+			int godownOrdersId = Integer.parseInt(
+					request.getParameter("godownOrdersId") != null ? request.getParameter("godownOrdersId") : "0");
+			int warehouseId = Integer
+					.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
 			infos = orderService.findRKMaterial(page, godownOrdersId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					BigDecimal bigDecimal = new BigDecimal(
-							info.getRawMaterialAmount());
-					info.setTotalPrice(bigDecimal.multiply(info
-							.getRawMaterialPrice()));
-					info.setReportAmount(orderService.getRepertoryAmount(
-							warehouseId, info.getRawMaterialId()));
+					BigDecimal bigDecimal = new BigDecimal(info.getRawMaterialAmount());
+					info.setTotalPrice(bigDecimal.multiply(info.getRawMaterialPrice()));
+					info.setReportAmount(orderService.getRepertoryAmount(warehouseId, info.getRawMaterialId()));
 				}
 			}
 			totalRows = orderService.getRKMaterialRow(godownOrdersId);
 		} else if ("findMaterialRequirement".equals(findType)) {// 查询部门原料需求信息
-			int departmentId = Integer.parseInt(request
-					.getParameter("departmentId") != null ? request
-					.getParameter("departmentId") : "0");
-			int warehouseId = Integer.parseInt(request
-					.getParameter("warehouseId") != null ? request
-					.getParameter("warehouseId") : "0");
+			int departmentId = Integer.parseInt(
+					request.getParameter("departmentId") != null ? request.getParameter("departmentId") : "0");
+			int warehouseId = Integer
+					.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
 			infos = departmentService.findRequirement(page, departmentId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					info.setReportAmount(orderService.getRepertoryAmount(
-							warehouseId, info.getRawMaterialId()));
+					info.setReportAmount(orderService.getRepertoryAmount(warehouseId, info.getRawMaterialId()));
 				}
 			}
 			totalRows = departmentService.getTotalRow(departmentId);
 		} else if ("findLLMaterial".equals(findType)) {// 查询领料单原料信息
-			int stocksRequisitionId = Integer.parseInt(request
-					.getParameter("stocksRequisitionId") != null ? request
-					.getParameter("stocksRequisitionId") : "0");
+			int stocksRequisitionId = Integer.parseInt(request.getParameter("stocksRequisitionId") != null
+					? request.getParameter("stocksRequisitionId") : "0");
 			infos = orderService.findLLMaterial(page, stocksRequisitionId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					BigDecimal bigDecimal = new BigDecimal(
-							info.getRawMaterialAmount());
-					info.setTotalPrice(bigDecimal.multiply(info
-							.getRawMaterialPrice()));
+					BigDecimal bigDecimal = new BigDecimal(info.getRawMaterialAmount());
+					info.setTotalPrice(bigDecimal.multiply(info.getRawMaterialPrice()));
 				}
 			}
 			totalRows = orderService.getLLMaterialRow(stocksRequisitionId);
 		} else if ("findWarehouse".equals(findType)) {// 查询库存原料信息
-			int warehouseId = Integer.parseInt(request
-					.getParameter("warehouseId") != null ? request
-					.getParameter("warehouseId") : "0");
+			int warehouseId = Integer
+					.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
 			infos = orderService.findRepertory(page, warehouseId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					info.setReportAmount(orderService.getRepertoryAmount(
-							warehouseId, info.getRawMaterialId()));
+					info.setReportAmount(orderService.getRepertoryAmount(warehouseId, info.getRawMaterialId()));
 				}
 			}
 			totalRows = orderService.getCKMaterialRow(warehouseId);
 		} else if ("findMaterial4".equals(findType)) {// 查询所有原料信息
-			String num = request.getParameter("rawMaterialNum") != null ? request
-					.getParameter("rawMaterialNum") : "";
-			String name = request.getParameter("rawMaterialName") != null ? request
-					.getParameter("rawMaterialName") : "";
+			String num = request.getParameter("rawMaterialNum") != null ? request.getParameter("rawMaterialNum") : "";
+			String name = request.getParameter("rawMaterialName") != null ? request.getParameter("rawMaterialName")
+					: "";
 			infos = rawMaterialService.selectAll(page, num, name);
 			totalRows = rawMaterialService.getTotalRows(num, name);
 		} else if ("findCheck".equals(findType)) {// 查询盘点原料信息
-			int warehouseId = Integer.parseInt(request
-					.getParameter("warehouseId") != null ? request
-					.getParameter("warehouseId") : "0");
+			int warehouseId = Integer
+					.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
 			infos = orderService.findCheck(page, warehouseId);
 			if (infos != null) {
 				for (RawMaterialInfo info : infos) {
-					info.setReportAmount(orderService.getRepertoryAmount(
-							warehouseId, info.getRawMaterialId()));
-					info.setStockAmount(info.getRawMaterialPrice(),
-							info.getReportAmount());
-					info.setCheckAmount(info.getRawMaterialPrice(),
-							info.getInventoryCount());
+					info.setReportAmount(orderService.getRepertoryAmount(warehouseId, info.getRawMaterialId()));
+					info.setStockAmount(info.getRawMaterialPrice(), info.getReportAmount());
+					info.setCheckAmount(info.getRawMaterialPrice(), info.getInventoryCount());
 					info.setRawMaterialAmount(info.getInventoryCount());
-					info.setNumberOfProfitAndLoss(info.getReportAmount()
-							- info.getInventoryCount());
-					info.setProfitAndLossAmount(info.getRawMaterialPrice(),
-							info.getNumberOfProfitAndLoss());
+					info.setNumberOfProfitAndLoss(info.getReportAmount() - info.getInventoryCount());
+					info.setProfitAndLossAmount(info.getRawMaterialPrice(), info.getNumberOfProfitAndLoss());
 				}
 			}
 			totalRows = orderService.getCheckRow(warehouseId);
 		}
-		LayuiJSON<RawMaterialInfo> layuiJSON = new LayuiJSON<RawMaterialInfo>(
-				0, "", totalRows, infos);
+		LayuiJSON<RawMaterialInfo> layuiJSON = new LayuiJSON<RawMaterialInfo>(0, "", totalRows, infos);
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
@@ -262,36 +237,29 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void smallOption(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void smallOption(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		String optionType = request.getParameter("optionType");
 		if ("finSmall".equals(optionType)) {// 查询原料小类
-			int supplierId = Integer.parseInt(request
-					.getParameter("supplierId") != null ? request
-					.getParameter("supplierId") : "0");
-			List<RawMaterialSmall> smalls = rawMaterialService
-					.finSmall(supplierId);
+			int supplierId = Integer
+					.parseInt(request.getParameter("supplierId") != null ? request.getParameter("supplierId") : "0");
+			List<RawMaterialSmall> smalls = rawMaterialService.finSmall(supplierId);
 			PublicUtil.jsonArrayReturn(response, smalls);
 		} else if ("selectSmall".equals(optionType)) {// 查询原料小类
-			int rawMaterialBigId = Integer.parseInt(request
-					.getParameter("rawMaterialBigId") != null ? request
-					.getParameter("rawMaterialBigId") : "0");
-			List<RawMaterialSmall> smalls = rawMaterialService
-					.selectSmall(rawMaterialBigId);
+			int rawMaterialBigId = Integer.parseInt(
+					request.getParameter("rawMaterialBigId") != null ? request.getParameter("rawMaterialBigId") : "0");
+			List<RawMaterialSmall> smalls = rawMaterialService.selectSmall(rawMaterialBigId);
 			PublicUtil.jsonArrayReturn(response, smalls);
 		} else if ("selectRawMaterial".equals(optionType)) {// 查询原料
-			int rawMaterialSmallId = Integer.parseInt(request
-					.getParameter("rawMaterialSmallId") != null ? request
-					.getParameter("rawMaterialSmallId") : "0");
-			List<RawMaterial> rawMaterials = rawMaterialService
-					.selectRawMaterial(rawMaterialSmallId);
+			int rawMaterialSmallId = Integer.parseInt(request.getParameter("rawMaterialSmallId") != null
+					? request.getParameter("rawMaterialSmallId") : "0");
+			List<RawMaterial> rawMaterials = rawMaterialService.selectRawMaterial(rawMaterialSmallId);
 			PublicUtil.jsonArrayReturn(response, rawMaterials);
 		}
 	}
 
 	/***
-	 * 新增单据信息 bills 单据信息 billsDetails 单据明细集合 
-	 * order (采购、配送、入库、退货、领料、领退、调拨、盘点)单据信息
+	 * 新增单据信息 bills 单据信息 billsDetails 单据明细集合 order (采购、配送、入库、退货、领料、领退、调拨、盘点)单据信息
 	 * PublicUtil工具类，response响应返回页面
 	 * 
 	 * @param request
@@ -299,19 +267,23 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void addBills(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void addBills(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		String billsType = request.getParameter("billsType");
-		int staffId = Integer
-				.parseInt(request.getParameter("staffID") != null ? request
-						.getParameter("staffID") : "0");
-		Bills bills = RequestHelper.getSingleRequest(request, Bills.class);
+		int staffId = Integer.parseInt(request.getParameter("staffID") != null ? request.getParameter("staffID") : "0");
+		Bills bills = RequestHelper.getSingleRequest(request, Bills.class);//通过反射获取对象数据
 		if (staffId > 0) {
 			bills.setStaffId(staffId);
 		}
-		List<BillsDetail> billsDetails = JSONArray.parseArray(
-				request.getParameter("tableInfo"), BillsDetail.class);
+		List<BillsDetail> billsDetails = JSONArray.parseArray(request.getParameter("tableInfo").toString(),
+				BillsDetail.class);//获取对象数组
+		for (BillsDetail billsDetail : billsDetails) {
+			if (!"".equals(billsDetail.getRemark()) && !billsDetail.getRemark().isEmpty()) {
+				//解决中文乱码问题
+				billsDetail.setRemark(RequestHelper.getNewString(billsDetail.getRemark().trim()));
+			}
+		}
 		String msg = new String();
 		int billsId = billsService.insert(bills, billsDetails);
 		if (billsId > 0) {
@@ -342,8 +314,7 @@ public class EntryOrderServlet extends HttpServlet {
 				msg = orderService.insertGodownOrders(order);
 				if ("新增成功".equals(msg)) {
 					// 加入库存
-					int flag = billsService
-							.insertRepertory(bills, billsDetails);
+					int flag = billsService.insertRepertory(bills, billsDetails);
 					if (flag > 0) {
 						jsonReturn.setState(true);
 						jsonReturn.setMsg("落单成功!");
@@ -360,8 +331,7 @@ public class EntryOrderServlet extends HttpServlet {
 				msg = orderService.insertCreditOrders(order);
 				if ("新增成功".equals(msg)) {
 					// 更新库存
-					int flag = billsService.updateRepertory(bills,
-							billsDetails, true);
+					int flag = billsService.updateRepertory(bills, billsDetails, true);
 					if (flag > 0) {
 						jsonReturn.setState(true);
 						jsonReturn.setMsg("落单成功!");
@@ -378,8 +348,7 @@ public class EntryOrderServlet extends HttpServlet {
 				msg = orderService.insertStocksRequisition(order, billsDetails);
 				if ("新增成功".equals(msg)) {
 					// 更新库存
-					int flag = billsService.updateRepertory(bills,
-							billsDetails, true);
+					int flag = billsService.updateRepertory(bills, billsDetails, true);
 					if (flag > 0) {
 						jsonReturn.setState(true);
 						jsonReturn.setMsg("落单成功!");
@@ -393,12 +362,10 @@ public class EntryOrderServlet extends HttpServlet {
 				}
 			} else if ("pickingCreditOrders".equals(billsType)) {
 				// 新增领料退货单
-				msg = orderService.insertPickingCreditOrders(order,
-						billsDetails);
+				msg = orderService.insertPickingCreditOrders(order, billsDetails);
 				if ("新增成功".equals(msg)) {
 					// 更新库存
-					int flag = billsService.updateRepertory(bills,
-							billsDetails, false);
+					int flag = billsService.updateRepertory(bills, billsDetails, false);
 					if (flag > 0) {
 						jsonReturn.setState(true);
 						jsonReturn.setMsg("落单成功!");
@@ -412,16 +379,13 @@ public class EntryOrderServlet extends HttpServlet {
 				}
 			} else if ("warehouseTransferOrder".equals(billsType)) {
 				// 新增仓库调拨单
-				int warehouseId = Integer.parseInt(request
-						.getParameter("warehouseID") != null ? request
-						.getParameter("warehouseID") : "0");
+				int warehouseId = Integer.parseInt(
+						request.getParameter("warehouseID") != null ? request.getParameter("warehouseID") : "0");
 				order.setWarehouseId(warehouseId);
-				msg = orderService.insertWarehouseTransferOrder(order, bills,
-						billsDetails);
+				msg = orderService.insertWarehouseTransferOrder(order, bills, billsDetails);
 				if ("新增成功".equals(msg)) {
 					bills.setWarehouseId(warehouseId);
-					int flag = billsService.updateRepertory(bills,
-							billsDetails, true);
+					int flag = billsService.updateRepertory(bills, billsDetails, true);
 					if (flag > 0) {
 						jsonReturn.setState(true);
 						jsonReturn.setMsg("落单成功!");
@@ -459,8 +423,8 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void findOrderInfo(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void findOrderInfo(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		String orderType = request.getParameter("orderType");
 		Page page = RequestHelper.getSingleRequest(request, Page.class);
 		page.setStartIndex(page.getPage(), page.getLimit());
@@ -485,8 +449,7 @@ public class EntryOrderServlet extends HttpServlet {
 				orderInfo.setBillsEntryTimes(orderInfo.getBillsEntryTime());
 			}
 		}
-		LayuiJSON<OrderInfo> layuiJSON = new LayuiJSON<OrderInfo>(0, "",
-				totalRows, orderInfos);
+		LayuiJSON<OrderInfo> layuiJSON = new LayuiJSON<OrderInfo>(0, "", totalRows, orderInfos);
 		PublicUtil.jsonObjectReturn(response, layuiJSON);
 	}
 
@@ -499,17 +462,15 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void addEidtSave(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void addEidtSave(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		String addType = request.getParameter("addType");
 		String msg = new String();
 		if (addType != null) {
-			if ("addCheck".equals(addType)) {// 新增盘点信息				
-				Check check = RequestHelper.getSingleRequest(request,
-						Check.class);
-				Check check2 = orderService.selectCheck(check.getWarehouseId(),
-						check.getRawMaterialId());
+			if ("addCheck".equals(addType)) {// 新增盘点信息
+				Check check = RequestHelper.getSingleRequest(request, Check.class);
+				Check check2 = orderService.selectCheck(check.getWarehouseId(), check.getRawMaterialId());
 				if (check2 != null) {
 					check.setCheckId(check2.getCheckId());
 					msg = orderService.updateCheck(check);
@@ -530,10 +491,9 @@ public class EntryOrderServlet extends HttpServlet {
 						jsonReturn.setMsg(msg);
 					}
 				}
-			} else if ("delCheck".equals(addType)) {// 删除盘点信息				
+			} else if ("delCheck".equals(addType)) {// 删除盘点信息
 				int checkId = Integer
-						.parseInt(request.getParameter("checkId") != null ? request
-								.getParameter("checkId") : "0");
+						.parseInt(request.getParameter("checkId") != null ? request.getParameter("checkId") : "0");
 				msg = orderService.delCheck(checkId);
 				if ("删除成功".equals(msg)) {
 					jsonReturn.setState(true);
@@ -545,8 +505,7 @@ public class EntryOrderServlet extends HttpServlet {
 			}
 		} else {
 			// 新增部门原料需求信息
-			MaterialRequirement requirement = RequestHelper.getSingleRequest(
-					request, MaterialRequirement.class);
+			MaterialRequirement requirement = RequestHelper.getSingleRequest(request, MaterialRequirement.class);
 			if (requirement.getMaterialRequirementId() != null) {
 				msg = departmentService.update(requirement);
 				if ("修改成功".equals(msg)) {
@@ -578,17 +537,14 @@ public class EntryOrderServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public void getReportAmount(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
+	public void getReportAmount(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		JsonReturn jsonReturn = new JsonReturn();
 		int warehouseId = Integer
-				.parseInt(request.getParameter("warehouseId") != null ? request
-						.getParameter("warehouseId") : "0");
-		int rawMaterialId = Integer.parseInt(request
-				.getParameter("rawMaterialId") != null ? request
-				.getParameter("rawMaterialId") : "0");
-		double reportAmount = orderService.getRepertoryAmount(warehouseId,
-				rawMaterialId);
+				.parseInt(request.getParameter("warehouseId") != null ? request.getParameter("warehouseId") : "0");
+		int rawMaterialId = Integer
+				.parseInt(request.getParameter("rawMaterialId") != null ? request.getParameter("rawMaterialId") : "0");
+		double reportAmount = orderService.getRepertoryAmount(warehouseId, rawMaterialId);
 		jsonReturn.setSum((int) reportAmount);
 		PublicUtil.jsonObjectReturn(response, jsonReturn);
 	}

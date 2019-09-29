@@ -269,7 +269,7 @@ public class BillDaoImpl implements IBillDao {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
 				if (repertory != null) {
-					double count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
+					int count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
 					BigDecimal decimal = new BigDecimal(count);
 					repertory2.setRepertoryId(repertory.getRepertoryId());
 					repertory2.setWarehouseId(bills.getWarehouseId());
@@ -313,7 +313,7 @@ public class BillDaoImpl implements IBillDao {
 			int total = 0;
 			int f = 0;
 			for (BillsDetail billsDetail : billsDetails) {
-				double count = 0;
+				int count = 0;
 				total++;
 				ps = con.prepareStatement(findRepertory);
 				ps.setInt(1, bills.getWarehouseId());

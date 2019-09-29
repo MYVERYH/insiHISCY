@@ -13,7 +13,7 @@ public class Repertory implements Serializable {
 	private Integer repertoryId;
 	private Integer warehouseId;
 	private Integer rawMaterialId;
-	private Double rawMaterialQuantity;
+	private Integer rawMaterialQuantity;
 	private BigDecimal totalPrice;
 
 	public Integer getRepertoryId() {
@@ -40,11 +40,11 @@ public class Repertory implements Serializable {
 		this.rawMaterialId = rawMaterialId;
 	}
 
-	public Double getRawMaterialQuantity() {
+	public Integer getRawMaterialQuantity() {
 		return rawMaterialQuantity;
 	}
 
-	public void setRawMaterialQuantity(Double rawMaterialQuantity) {
+	public void setRawMaterialQuantity(Integer rawMaterialQuantity) {
 		this.rawMaterialQuantity = rawMaterialQuantity;
 	}
 
