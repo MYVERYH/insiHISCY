@@ -67,12 +67,6 @@ public class EntryOrderServlet extends HttpServlet {
 	}
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// 解决中文乱码
-		response.setContentType("text/html;charset=utf-8");
-		// 请求解决乱码
-		request.setCharacterEncoding("utf-8");
-		// 响应解决乱码
-		response.setCharacterEncoding("utf-8");
 		String type = request.getParameter("type");
 		Class<?> servletClass = this.getClass();// 获取当前ServletClass类(即EntryOrderServlet.class)
 		Method[] methods = servletClass.getDeclaredMethods();//// 获取servletClass类里面所有方法，即方法数组
@@ -272,15 +266,15 @@ public class EntryOrderServlet extends HttpServlet {
 		JsonReturn jsonReturn = new JsonReturn();
 		String billsType = request.getParameter("billsType");
 		int staffId = Integer.parseInt(request.getParameter("staffID") != null ? request.getParameter("staffID") : "0");
-		Bills bills = RequestHelper.getSingleRequest(request, Bills.class);//通过反射获取对象数据
+		Bills bills = RequestHelper.getSingleRequest(request, Bills.class);// 通过反射获取对象数据
 		if (staffId > 0) {
 			bills.setStaffId(staffId);
 		}
 		List<BillsDetail> billsDetails = JSONArray.parseArray(request.getParameter("tableInfo").toString(),
-				BillsDetail.class);//获取对象数组
+				BillsDetail.class);// 获取对象数组
 		for (BillsDetail billsDetail : billsDetails) {
 			if (!"".equals(billsDetail.getRemark()) && !billsDetail.getRemark().isEmpty()) {
-				//解决中文乱码问题
+				// 解决中文乱码问题
 				billsDetail.setRemark(RequestHelper.getNewString(billsDetail.getRemark().trim()));
 			}
 		}
