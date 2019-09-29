@@ -2083,8 +2083,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						totalMoney += Number(tableInfo[i].rawMaterialPrice) * Number(tableInfo[i].rawMaterialAmount);
 					}
 					if (totalMoney > 0) {
-						$("#billsMoney").val(totalMoney);
-						console.log(data.field);
+						$("#billsMoney").val(totalMoney);		
 						tableInfo = JSON.stringify(tableInfo);
 	            		formSubmit("formPurchaseOrders", 
 	            		"${ctx}/servlet/EntryOrderServlet?tableInfo=" + tableInfo, "selectMaterial1");
