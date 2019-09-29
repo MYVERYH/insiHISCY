@@ -10,12 +10,14 @@ import java.util.List;
 import com.web.dao.IOrderListDao;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
+import com.web.po.ShoppingCart;
 import com.web.util.DBUtil;
 import com.web.util.DaoHelper;
 import com.web.util.JdbcHelper;
 import com.web.util.PublicUtil;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
+import com.web.vo.ShoppingCartInfo;
 
 public class OrderListDaoImpl implements IOrderListDao {
 
@@ -52,6 +54,8 @@ public class OrderListDaoImpl implements IOrderListDao {
 	private String delete = "DELETE FROM `pw_indent` WHERE `indent_id` = ?";
 	private String deleteDetail = "DELETE FROM `pw_indentdetail` WHERE `indent_id` = ?";
 	private String deleteRF = "DELETE FROM `pw_ratingform` WHERE `indent_id` = ?";
+	private String findShoppCart = "SELECT s.*,w.`wineGreName`,w.`wineGrePrice` FROM `pw_shopping_cart` s "
+			+ "JOIN `sys_winegre` w ON s.`wineGreId` = w.`wineGreId` WHERE s.`userId`=?";
 
 	@Override
 	public List<IndentInfo> selectAll() {
@@ -105,8 +109,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 				ps = con.prepareStatement(findByID);
 				ps.setInt(1, id);
 				rs = ps.executeQuery();
-				RatingForm ratingForm = JdbcHelper.getSingleResult(rs,
-						RatingForm.class);
+				RatingForm ratingForm = JdbcHelper.getSingleResult(rs, RatingForm.class);
 				if (ratingForm != null) {
 					flag = 0;
 					ps = con.prepareStatement(deleteRF);
@@ -136,11 +139,10 @@ public class OrderListDaoImpl implements IOrderListDao {
 			StringBuffer buffer = new StringBuffer(selectAll);
 			if (parameter != "" && !parameter.isEmpty()) {
 				if (PublicUtil.isChinese(parameter)) {
-					buffer.append("WHERE s.`order_status` = '" + parameter
-							+ "'");
+					buffer.append("WHERE s.`order_status` = '" + parameter + "'");
 				} else {
-					buffer.append(" WHERE i.`indent_num` = '" + parameter
-							+ "' OR i.`indent_time` LIKE '%" + parameter + "%'");
+					buffer.append(" WHERE i.`indent_num` = '" + parameter + "' OR i.`indent_time` LIKE '%" + parameter
+							+ "%'");
 				}
 			}
 			buffer.append(" GROUP BY i.`indent_id` ORDER BY i.`indent_id` DESC LIMIT ?,?");
@@ -164,11 +166,10 @@ public class OrderListDaoImpl implements IOrderListDao {
 		StringBuilder buffer = new StringBuilder(getTotalRows);
 		if (parameter != "" && !parameter.isEmpty()) {
 			if (PublicUtil.isChinese(parameter)) {
-				buffer.append("WHERE s.`order_status` = '" + parameter
-						+ "'");
+				buffer.append("WHERE s.`order_status` = '" + parameter + "'");
 			} else {
-				buffer.append(" WHERE i.`indent_num` = '" + parameter
-						+ "' OR i.`indent_time` LIKE '%" + parameter + "%'");
+				buffer.append(
+						" WHERE i.`indent_num` = '" + parameter + "' OR i.`indent_time` LIKE '%" + parameter + "%'");
 			}
 		}
 		buffer.append(" GROUP BY i.`indent_id`) a");
@@ -177,8 +178,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 	}
 
 	@Override
-	public List<IndentInfo> selectWineGre(int indentId, Page page,
-			String findType) {
+	public List<IndentInfo> selectWineGre(int indentId, Page page, String findType) {
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -313,6 +313,77 @@ public class OrderListDaoImpl implements IOrderListDao {
 			DBUtil.close(con, ps, rs);
 		}
 		return ratingForm;
+	}
+
+	@Override
+	public int insertShoppCart(ShoppingCart shoppingCart) {
+		ShoppingCart cart = new ShoppingCart();
+		int flag = 0;
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement("SELECT * FROM `pw_shopping_cart` WHERE userId=? AND wineGreId=?");
+			ps.setInt(1, shoppingCart.getUserId());
+			ps.setInt(2, shoppingCart.getWineGreId());
+			rs = ps.executeQuery();
+			cart = JdbcHelper.getSingleResult(rs, ShoppingCart.class);
+			if (cart != null) {
+				cart.setWineGreQuantity(cart.getWineGreQuantity() + 1);
+				flag = DaoHelper.insertUpdate("UPDATE `pw_shopping_cart` SET wineGreId=?,userId=?,"
+						+ "wineGreQuantity=? WHERE shoppingCartId=?", cart);
+			} else {
+				flag = DaoHelper.insertUpdate(
+						"INSERT INTO `pw_shopping_cart`(wineGreId,userId,wineGreQuantity) VALUES(?,?,?)", shoppingCart);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return flag;
+	}
+
+	@Override
+	public List<ShoppingCartInfo> findShoppCart(int userId) {
+		List<ShoppingCartInfo> shoppingCarts = new ArrayList<ShoppingCartInfo>();
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement(findShoppCart);
+			ps.setInt(1, userId);
+			rs = ps.executeQuery();
+			shoppingCarts = JdbcHelper.getResult(rs, ShoppingCartInfo.class);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return shoppingCarts;
+	}
+
+	@Override
+	public int delShoppCart(int userId, int wineGreId) {
+		int flag = 0;
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement("DELETE FROM `pw_shopping_cart` WHERE userId=? and wineGreId=?");
+			ps.setInt(1, userId);
+			ps.setInt(2, wineGreId);
+			flag = ps.executeUpdate();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return flag;
+	}
+
+	@Override
+	public int updateShoppCart(ShoppingCart shoppingCart) {
+		int flag = DaoHelper.insertUpdate("UPDATE `pw_shopping_cart` SET wineGreQuantity=? WHERE shoppingCartId=?",
+				shoppingCart);
+		return flag;
 	}
 
 }

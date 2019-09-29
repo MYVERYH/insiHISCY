@@ -6,9 +6,11 @@ import com.web.dao.IOrderListDao;
 import com.web.dao.impl.OrderListDaoImpl;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
+import com.web.po.ShoppingCart;
 import com.web.service.IOrderListService;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
+import com.web.vo.ShoppingCartInfo;
 
 public class OrderListServiceImpl implements IOrderListService {
 
@@ -112,6 +114,45 @@ public class OrderListServiceImpl implements IOrderListService {
 	public RatingForm findByID(int indentId) {
 		// TODO Auto-generated method stub
 		return orderListDao.findByID(indentId);
+	}
+
+	@Override
+	public String insertShoppCart(ShoppingCart shoppingCart) {
+		String msg = "";
+		if (orderListDao.insertShoppCart(shoppingCart) > 0) {
+			msg = "新增成功";
+		} else {
+			msg = "新增失败";
+		}
+		return msg;
+	}
+
+	@Override
+	public List<ShoppingCartInfo> findShoppCart(int userId) {
+		// TODO Auto-generated method stub
+		return orderListDao.findShoppCart(userId);
+	}
+
+	@Override
+	public String delShoppCart(int userId, int wineGreId) {
+		String msg = "";
+		if (orderListDao.delShoppCart(userId, wineGreId) > 0) {
+			msg = "删除成功";
+		} else {
+			msg = "删除失败";
+		}
+		return msg;
+	}
+
+	@Override
+	public String updateShoppCart(ShoppingCart shoppingCart) {
+		String msg = "";
+		if (orderListDao.updateShoppCart(shoppingCart) > 0) {
+			msg = "修改成功";
+		} else {
+			msg = "修改失败";
+		}
+		return msg;
 	}
 
 }

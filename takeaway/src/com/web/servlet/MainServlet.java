@@ -207,6 +207,8 @@ public class MainServlet extends HttpServlet {
 					response);
 		} else if ("Main".equals(content)) {//外卖主页面
 			request.getRequestDispatcher("/servlet/CuisineServlet?type=showCuisine").forward(request, response);
+		} else if ("ShoppingCart".equals(content)) {
+			request.getRequestDispatcher("/jsp/ShoppingCart.jsp").forward(request, response);
 		}
 	}
 

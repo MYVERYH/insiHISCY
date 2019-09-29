@@ -5,8 +5,10 @@ import java.util.List;
 import com.web.common.BaseDao;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
+import com.web.po.ShoppingCart;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
+import com.web.vo.ShoppingCartInfo;
 
 public interface IOrderListDao extends BaseDao<IndentInfo, Integer> {
 
@@ -30,5 +32,13 @@ public interface IOrderListDao extends BaseDao<IndentInfo, Integer> {
 	public int updateDS(DeliveryStaff deliveryStaff);//修改配送信息
 	
 	public RatingForm findByID(int indentId);//查询评价信息
+	
+	public int insertShoppCart(ShoppingCart shoppingCart);//新增购物车信息
+	
+	public List<ShoppingCartInfo> findShoppCart(int userId);//查询用户购物车信息
+	
+	public int delShoppCart(int userId, int wineGreId);//删除用户购物车信息
+	
+	public int updateShoppCart(ShoppingCart shoppingCart);//修改用户购物车信息
 
 }
