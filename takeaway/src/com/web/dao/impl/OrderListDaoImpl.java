@@ -11,6 +11,7 @@ import com.web.dao.IOrderListDao;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
 import com.web.po.ShoppingCart;
+import com.web.po.UserAddress;
 import com.web.util.DBUtil;
 import com.web.util.DaoHelper;
 import com.web.util.JdbcHelper;
@@ -384,6 +385,24 @@ public class OrderListDaoImpl implements IOrderListDao {
 		int flag = DaoHelper.insertUpdate("UPDATE `pw_shopping_cart` SET wineGreQuantity=? WHERE shoppingCartId=?",
 				shoppingCart);
 		return flag;
+	}
+
+	@Override
+	public List<UserAddress> findUserAddress(int userId) {
+		List<UserAddress> addresses = new ArrayList<UserAddress>();
+		try {
+			con = DBUtil.getConnection();
+			ps = con.prepareStatement("SELECT * FROM `pw_user_address` WHERE `userId`=?");
+			ps.setInt(1, userId);
+			rs = ps.executeQuery();
+			addresses = JdbcHelper.getResult(rs, UserAddress.class);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);
+		}
+		return addresses;
 	}
 
 }

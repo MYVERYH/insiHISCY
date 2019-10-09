@@ -7,6 +7,7 @@ import com.web.dao.impl.OrderListDaoImpl;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
 import com.web.po.ShoppingCart;
+import com.web.po.UserAddress;
 import com.web.service.IOrderListService;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
@@ -153,6 +154,12 @@ public class OrderListServiceImpl implements IOrderListService {
 			msg = "修改失败";
 		}
 		return msg;
+	}
+
+	@Override
+	public List<UserAddress> findUserAddress(int userId) {
+		// TODO Auto-generated method stub
+		return orderListDao.findUserAddress(userId);
 	}
 
 }

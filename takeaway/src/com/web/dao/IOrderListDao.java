@@ -6,6 +6,7 @@ import com.web.common.BaseDao;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
 import com.web.po.ShoppingCart;
+import com.web.po.UserAddress;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
 import com.web.vo.ShoppingCartInfo;
@@ -40,5 +41,7 @@ public interface IOrderListDao extends BaseDao<IndentInfo, Integer> {
 	public int delShoppCart(int userId, int wineGreId);//删除用户购物车信息
 	
 	public int updateShoppCart(ShoppingCart shoppingCart);//修改用户购物车信息
-
+	
+	public List<UserAddress> findUserAddress(int userId);//根据用户id查询用户地址信息
+ 
 }

@@ -6,6 +6,7 @@ import com.web.common.BaseService;
 import com.web.po.DeliveryStaff;
 import com.web.po.RatingForm;
 import com.web.po.ShoppingCart;
+import com.web.po.UserAddress;
 import com.web.vo.IndentInfo;
 import com.web.vo.Page;
 import com.web.vo.ShoppingCartInfo;
@@ -39,5 +40,7 @@ public interface IOrderListService extends BaseService<IndentInfo, Integer> {
 	public String delShoppCart(int userId, int wineGreId);
 	
 	public String updateShoppCart(ShoppingCart shoppingCart);
+	
+	public List<UserAddress> findUserAddress(int userId);
 
 }
