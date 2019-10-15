@@ -33,18 +33,19 @@ public class WarehouseDaoImpl implements IWarehouseDao {
 	private String delete = "DELETE FROM pw_warehouse WHERE warehouseId=?";
 
 	@Override
-	public List<Warehouse> selectAll() {
+	public List<Warehouse> selectAll() {//查询仓库信息
 		List<Warehouse> warehouses = new ArrayList<Warehouse>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement("SELECT * FROM pw_warehouse");
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			warehouses = JdbcHelper.getResult(rs, Warehouse.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return warehouses;
 	}
@@ -53,59 +54,65 @@ public class WarehouseDaoImpl implements IWarehouseDao {
 	public Warehouse findById(int id) {
 		Warehouse warehouse = new Warehouse();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findById);
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getSingleResult方法获取单条数据
 			warehouse = JdbcHelper.getSingleResult(rs, Warehouse.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return warehouse;
 	}
 
 	@Override
 	public int insert(Warehouse warehouse) {
+		//调用DaoHelper反射类的insertUpdate方法新增仓库信息
 		int flag = DaoHelper.insertUpdate(insert, warehouse);
 		return flag;
 	}
 
 	@Override
 	public int update(Warehouse warehouse) {
+		//调用DaoHelper反射类的insertUpdate方法修改仓库信息
 		int flag = DaoHelper.insertUpdate(update, warehouse);
 		return flag;
 	}
 
 	@Override
 	public int delete(int id) {
+		//调用DaoHelper反射类的delete方法删除仓库信息
 		int flag = DaoHelper.delete(delete, id);
 		return flag;
 	}
 
 	@Override
-	public List<WarehouseInfo> selectAll(Page page) {
+	public List<WarehouseInfo> selectAll(Page page) {//查询仓库信息
 		List<WarehouseInfo> infos = new ArrayList<WarehouseInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(selectAll);
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, WarehouseInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
 
 	@Override
 	public long getTotalRows() {
+		//调用DaoHelper反射类的getTotalRow方法获取仓库信息总条数
 		long row = DaoHelper.getTotalRow(getTotalRows);
 		return row;
 	}

@@ -12,7 +12,20 @@ public class MaterialRequirement implements Serializable {
 	private Integer materialRequirementId;
 	private Integer departmentId;
 	private Integer rawMaterialId;
-	private Double quantityRequired;
+	private Integer quantityRequired;
+
+	public MaterialRequirement() {
+		super();
+	}
+
+	public MaterialRequirement(Integer materialRequirementId, Integer departmentId, Integer rawMaterialId,
+			Integer quantityRequired) {
+		super();
+		this.materialRequirementId = materialRequirementId;
+		this.departmentId = departmentId;
+		this.rawMaterialId = rawMaterialId;
+		this.quantityRequired = quantityRequired;
+	}
 
 	public Integer getMaterialRequirementId() {
 		return materialRequirementId;
@@ -38,11 +51,11 @@ public class MaterialRequirement implements Serializable {
 		this.rawMaterialId = rawMaterialId;
 	}
 
-	public Double getQuantityRequired() {
+	public Integer getQuantityRequired() {
 		return quantityRequired;
 	}
 
-	public void setQuantityRequired(Double quantityRequired) {
+	public void setQuantityRequired(Integer quantityRequired) {
 		this.quantityRequired = quantityRequired;
 	}
 

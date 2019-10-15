@@ -40,15 +40,15 @@ public class UserDaoImpl implements IUserDao {
 
 	@Override
 	public int insert(User user) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(insert, user);
+		//调用DaoHelper反射类的insertUpdate方法新增用户信息
+		int flag = DaoHelper.insertUpdate(insert, user);
 		return flag;
 	}
 
 	@Override
 	public int update(User user) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(updata, user);
+		//调用DaoHelper反射类的insertUpdate方法修改用户信息
+		int flag =  DaoHelper.insertUpdate(updata, user);
 		return flag;
 	}
 
@@ -62,11 +62,12 @@ public class UserDaoImpl implements IUserDao {
 	public User findByUserMCAndPassword(String userMC, String password) {
 		User user = new User();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findByUserMCAndPassword);
 			ps.setString(1, userMC);
 			ps.setString(2, password);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取单条数据
 			user = JdbcHelper.getSingleResult(rs, User.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -81,11 +82,12 @@ public class UserDaoImpl implements IUserDao {
 	public User findByUserNameAndPassword(String userName, String userPassword) {
 		User user = new User();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findByUserNameAndPassword);
 			ps.setString(1, userName);
 			ps.setString(2, userPassword);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			user = JdbcHelper.getSingleResult(rs, User.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block

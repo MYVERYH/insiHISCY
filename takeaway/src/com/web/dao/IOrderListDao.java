@@ -43,5 +43,11 @@ public interface IOrderListDao extends BaseDao<IndentInfo, Integer> {
 	public int updateShoppCart(ShoppingCart shoppingCart);//修改用户购物车信息
 	
 	public List<UserAddress> findUserAddress(int userId);//根据用户id查询用户地址信息
+	
+	public int insertUserAddress(UserAddress userAddress);//新增用户地址
+	
+	public int updateUserAddress(UserAddress userAddress);//修改用户地址
+	
+	public int delUserAddress(int id);//删除用户地址
  
 }

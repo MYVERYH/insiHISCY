@@ -162,4 +162,37 @@ public class OrderListServiceImpl implements IOrderListService {
 		return orderListDao.findUserAddress(userId);
 	}
 
+	@Override
+	public String insertUserAddress(UserAddress userAddress) {
+		String msg = "";
+		if (orderListDao.insertUserAddress(userAddress) > 0) {
+			msg = "新增成功";
+		} else {
+			msg = "新增失败";
+		}
+		return msg;
+	}
+
+	@Override
+	public String updateUserAddress(UserAddress userAddress) {
+		String msg = "";
+		if (orderListDao.updateUserAddress(userAddress) > 0) {
+			msg = "修改成功";
+		} else {
+			msg = "修改失败";
+		}
+		return msg;
+	}
+
+	@Override
+	public String delUserAddress(int id) {
+		String msg = "";
+		if (orderListDao.delUserAddress(id) > 0) {
+			msg = "删除成功";
+		} else {
+			msg = "删除失败";
+		}
+		return msg;
+	}
+
 }

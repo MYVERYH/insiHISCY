@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mysql.jdbc.Statement;
 import com.web.dao.ISupplierDao;
 import com.web.po.Supplier;
 import com.web.po.SupplierDetail;
@@ -47,18 +46,19 @@ public class SupplierDaoImpl implements ISupplierDao {
 	private String deleteDetial = "DELETE FROM pw_supplier_detail WHERE supplierId=?";
 
 	@Override
-	public List<Supplier> selectAll() {
+	public List<Supplier> selectAll() {//查询所有供应商
 		List<Supplier> suppliers = new ArrayList<Supplier>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement("SELECT * FROM pw_supplier");
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			suppliers = JdbcHelper.getResult(rs, Supplier.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return suppliers;
 	}
@@ -92,7 +92,7 @@ public class SupplierDaoImpl implements ISupplierDao {
 			String supplierName) {
 		List<SupplierInfo> infos = new ArrayList<SupplierInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(selectAll);
 			ps.setString(1, "%" + supplierNum + "%");
 			ps.setString(2, "%" + supplierName + "%");
@@ -104,7 +104,7 @@ public class SupplierDaoImpl implements ISupplierDao {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
@@ -113,7 +113,7 @@ public class SupplierDaoImpl implements ISupplierDao {
 	public long getTotalRows(String supplierNum, String supplierName) {
 		long intTotalRow = 0;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(getTotalRows);
 			ps.setString(1, "%" + supplierNum + "%");
 			ps.setString(2, "%" + supplierName + "%");
@@ -125,7 +125,7 @@ public class SupplierDaoImpl implements ISupplierDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return intTotalRow;
 	}
@@ -138,78 +138,67 @@ public class SupplierDaoImpl implements ISupplierDao {
 	}
 
 	@Override
-	public int insert(Supplier supplier, SupplierDetail detail) {
+	public int insert(Supplier supplier, SupplierDetail detail) {//新增供应商信息
 		int flag = 0;
 		int key = 0;
 		try {
-			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
-			ps = con.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
-			flag = DaoHelper.setPreparedStatement(ps, supplier, insert);
-			if (flag > 0) {
-				flag = 0;
-				rs = ps.getGeneratedKeys();
-				if (rs != null) {
-					while (rs.next()) {
-						key = Integer.parseInt(rs.getLong(1) + "");
-					}
-				}
+			con = DBUtil.getConnection();//获取连接
+			con.setAutoCommit(false);//关闭自动提交
+			key = DaoHelper.setPsToSQLException(con, supplier, insert);
+			if (key > 0) {//判断新增供应商是否成功
 				detail.setSupplierId(key);
-				ps = con.prepareStatement(insertDetail);
-				flag = DaoHelper.setPreparedStatement(ps, detail, insertDetail);
+				flag = DaoHelper.setPsToSQLException(con, detail, insertDetail);
 				con.commit();
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();//事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return flag;
 	}
 
 	@Override
-	public int update(Supplier supplier, SupplierDetail detail) {
+	public int update(Supplier supplier, SupplierDetail detail) {//修改供应商信息
 		int flag = 0;
 		try {
-			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
-			ps = con.prepareStatement(update);
-			int key = DaoHelper.setPreparedStatement(ps, supplier, update);
-			if (key > 0) {
-				ps = con.prepareStatement(updateDetail);
-				flag = DaoHelper.setPreparedStatement(ps, detail, updateDetail);
+			con = DBUtil.getConnection();//获取连接
+			con.setAutoCommit(false);//关闭自动提交
+			int key = DaoHelper.setPsToSQLException(con, supplier, update);
+			if (key > 0) {//判断修改供应商信息是否成功
+				flag = DaoHelper.setPsToSQLException(con, detail, updateDetail);
 				con.commit();
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();//事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return flag;
 	}
 
 	@Override
-	public int delSupplier(int id) {
+	public int delSupplier(int id) {//删除供应商信息
 		int flag = 0;
 		try {
-			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
+			con = DBUtil.getConnection();//获取连接
+			con.setAutoCommit(false);//关闭自动提交
 			ps = con.prepareStatement(deleteDetial);
 			ps.setInt(1, id);
 			int key = ps.executeUpdate();
-			if (key > 0) {
+			if (key > 0) {//判断删除供应商明细是否成功
 				ps = con.prepareStatement(delete);
 				ps.setInt(1, id);
 				flag = ps.executeUpdate();
@@ -217,14 +206,14 @@ public class SupplierDaoImpl implements ISupplierDao {
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();//事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return flag;
 	}

@@ -33,7 +33,7 @@ public interface IOrderDao extends BaseDao<Order, Integer> {
 
 	public long getPSMaterialRow(int id);
 	
-	public double getRepertoryAmount(int warehouseId, int rawMaterialId);// 根据仓库id和原料id查询库存数量
+	public int getRepertoryAmount(int warehouseId, int rawMaterialId);// 根据仓库id和原料id查询库存数量
 	
 	public int insertGodownOrders(Order order);// 查询入库单信息
 

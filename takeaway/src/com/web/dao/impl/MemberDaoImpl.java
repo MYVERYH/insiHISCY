@@ -67,6 +67,7 @@ public class MemberDaoImpl implements IMemberDao {
 		List<MemberInfo> members = new ArrayList<MemberInfo>();
 		try {
 			StringBuilder builder = new StringBuilder(selectAll);
+			//查询条件拼接
 			if (num != "" && !num.isEmpty()) {
 				builder.append(" AND c.`MarkClub` = '" + num + "'");
 			}
@@ -74,11 +75,12 @@ public class MemberDaoImpl implements IMemberDao {
 				builder.append(" AND m.`MemberMC` like '%" + name + "%'");
 			}
 			builder.append(" ORDER BY m.`ClubCardID` LIMIT ?,?");
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(builder.toString());
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			members = JdbcHelper.getResult(rs, MemberInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -90,12 +92,14 @@ public class MemberDaoImpl implements IMemberDao {
 	@Override
 	public long getTotalRows(String num, String name) {
 		StringBuilder builder = new StringBuilder(getTotalRow);
+		//查询条件拼接
 		if (num != "" && !num.isEmpty()) {
 			builder.append(" AND c.`MarkClub` = '" + num + "'");
 		}
 		if (name != "" && !name.isEmpty()) {
 			builder.append(" AND m.`MemberMC` like '%" + name + "%'");
 		}
+		//调用DaoHelper反射类的getTotalRow方法获取数据总条数
 		long intTotalRow = DaoHelper.getTotalRow(builder.toString());
 		return intTotalRow;
 	}

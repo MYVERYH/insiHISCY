@@ -1,8 +1,5 @@
 package com.web.dao.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -57,177 +54,134 @@ public class WineGreDaoImpl implements IWineGreDao {
 	public List<WineGre> selectAll() {
 		List<WineGre> wineGres = new ArrayList<WineGre>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("select wineGreNum from sys_winegre");
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGres = JdbcHelper.getResult(rs, WineGre.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGres;
 	}
 
 	@Override
 	public WineGre findById(int id) {
+		// 调用DaoHelper反射类的findByID方法根据id查询酒菜信息
 		WineGre wineGre = DaoHelper.findByID(findById, WineGre.class, id);
 		return wineGre;
 	}
 
 	@Override
-	public int insert(WineGre wineGre) {
-		int flag = 0;
-		// flag = DaoHelper.insertUpdate(insert, wineGre);
-		try {
-			con = DBUtil.getConnection();
-			ps = con.prepareStatement(insert);
-			ps.setInt(1, wineGre.getWineGreSmallId());
-			ps.setString(2, wineGre.getWineGreNum());
-			ps.setString(3, wineGre.getWineGreName());
-			ps.setDouble(4, wineGre.getWineGrePrice());
-			ps.setDouble(5, wineGre.getBigPrice());
-			ps.setDouble(6, wineGre.getSmallPrice());
-			ps.setDouble(7, wineGre.getMemberPrice());
-			ps.setBoolean(8, wineGre.getIsDiscount());
-			InputStream in = new ByteArrayInputStream(wineGre.getPicture());
-			ps.setBinaryStream(9, in, in.available());
-			flag = ps.executeUpdate();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			DBUtil.close(con, ps, rs);
+	public int insert(WineGre wineGre) {// 新增酒菜信息
+		// 调用DaoHelper反射类的insertUpdate方法新增酒菜信息
+		int flag = DaoHelper.insertUpdate(insert, wineGre);
+		return flag;
+	}
+
+	@Override
+	public int update(WineGre wineGre) {// 修改酒菜信息
+		StringBuilder builder = new StringBuilder(update);
+		if (wineGre.getPicture() != null) {// 判断二进制数组即图片是否为空，若不为空则修改图片
+			builder.append(",Picture=? WHERE wineGreId=?");
+		} else {// 为空则不修改图片
+			builder.append(" WHERE wineGreId=?");
 		}
+		int flag = DaoHelper.insertUpdate(builder.toString(), wineGre);
 		return flag;
 	}
 
 	@Override
-	public int update(WineGre wineGre) {
-		int flag = 0;
-		// flag = DaoHelper.insertUpdate(update, wineGre);
-		try {
-			StringBuilder builder = new StringBuilder(update);
-			if (wineGre.getPicture() != null) {
-				builder.append(",Picture=? where WineGreID=?");
-				con = DBUtil.getConnection();
-				ps = con.prepareStatement(builder.toString());
-				ps.setInt(1, wineGre.getWineGreSmallId());
-				ps.setString(2, wineGre.getWineGreNum());
-				ps.setString(3, wineGre.getWineGreName());
-				ps.setDouble(4, wineGre.getWineGrePrice());
-				ps.setDouble(5, wineGre.getBigPrice());
-				ps.setDouble(6, wineGre.getSmallPrice());
-				ps.setDouble(7, wineGre.getMemberPrice());
-				ps.setBoolean(8, wineGre.getIsDiscount());
-				InputStream in = new ByteArrayInputStream(wineGre.getPicture());
-				ps.setBinaryStream(9, in, in.available());
-				ps.setInt(10, wineGre.getWineGreId());
-				flag = ps.executeUpdate();
-			} else {
-				builder.append(" where wineGreId=?");
-				flag = DaoHelper.insertUpdate(builder.toString(), wineGre);
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			DBUtil.close(con, ps, rs);
-		}
+	public int delete(int id) {// 删除酒菜信息
+		// 调用DaoHelper反射类的delete方法删除酒菜信息
+		int flag = DaoHelper.delete(delete, id);
 		return flag;
 	}
 
 	@Override
-	public int delete(int id) {
-		int flag = 0;
-		flag = DaoHelper.delete(delete, id);
-		return flag;
-	}
-
-	@Override
-	public List<WineGreBig> findBig(Page page) {
+	public List<WineGreBig> findBig(Page page) {// 查询酒菜大类信息
 		List<WineGreBig> wineGreBigs = new ArrayList<WineGreBig>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(findBig);
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGreBigs = JdbcHelper.getResult(rs, WineGreBig.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGreBigs;
 	}
 
 	@Override
 	public long count() {
+		// 调用DaoHelper反射类的getTotalRow方法获取酒菜大类信息总条数
 		long intTotalRow = DaoHelper.getTotalRow(count);
 		return intTotalRow;
 	}
 
 	@Override
 	public int insert(WineGreBig big) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(insertBig, big);
+		// 调用DaoHelper反射类的insertUpdate方法新增酒菜大类信息
+		int flag = DaoHelper.insertUpdate(insertBig, big);
 		return flag;
 	}
 
 	@Override
 	public WineGreBig findByID(int id) {
+		// 调用DaoHelper反射类的findByID方法根据id查询酒菜大类信息
 		WineGreBig wineGreBig = DaoHelper.findByID(findBigById, WineGreBig.class, id);
 		return wineGreBig;
 	}
 
 	@Override
 	public int update(WineGreBig big) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(updateBig, big);
+		// 调用DaoHelper反射类的insertUpdate方法修改酒菜大类信息
+		int flag = DaoHelper.insertUpdate(updateBig, big);
 		return flag;
 	}
 
 	@Override
 	public int deleteBig(int id) {
-		int flag = 0;
-		flag = DaoHelper.delete(deleteBig, id);
+		// 调用DaoHelper反射类的delete方法删除酒菜大类信息
+		int flag = DaoHelper.delete(deleteBig, id);
 		return flag;
 	}
 
 	@Override
-	public List<WineGreSmall> findSmalll(Page page, int id) {
+	public List<WineGreSmall> findSmalll(Page page, int id) {// 根据酒菜大类id查询酒菜小类信息
 		List<WineGreSmall> wineGreSmalls = new ArrayList<WineGreSmall>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(findSmalll);
 			ps.setInt(1, id);
 			ps.setInt(2, page.getStartIndex());
 			ps.setInt(3, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGreSmalls = JdbcHelper.getResult(rs, WineGreSmall.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGreSmalls;
 	}
 
 	@Override
-	public long getTotalRows(int id) {
+	public long getTotalRows(int id) {// 根据酒菜大类id查询酒菜小类信息总条数
 		long intTotalRow = 0;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(getTotalRows);
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
@@ -238,63 +192,65 @@ public class WineGreDaoImpl implements IWineGreDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return intTotalRow;
 	}
 
 	@Override
 	public int insert(WineGreSmall small) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(insertSmalll, small);
+		// 调用DaoHelper反射类的insertUpdate方法新增酒菜小类信息
+		int flag = DaoHelper.insertUpdate(insertSmalll, small);
 		return flag;
 	}
 
 	@Override
 	public WineGreSmall findBYID(int id) {
+		// 调用DaoHelper反射类的findByID方法根据id查询酒菜小类信息
 		WineGreSmall wineGreSmall = DaoHelper.findByID(findSmalllById, WineGreSmall.class, id);
 		return wineGreSmall;
 	}
 
 	@Override
 	public int update(WineGreSmall small) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(updateSmalll, small);
+		// 调用DaoHelper反射类的insertUpdate方法修改酒菜小类信息
+		int flag = DaoHelper.insertUpdate(updateSmalll, small);
 		return flag;
 	}
 
 	@Override
 	public int deleteSmall(int id) {
-		int flag = 0;
-		flag = DaoHelper.delete(deleteSmalll, id);
+		// 调用DaoHelper反射类的insertUpdate方法删除酒菜小类信息
+		int flag = DaoHelper.delete(deleteSmalll, id);
 		return flag;
 	}
 
 	@Override
-	public List<WineGre> selectAll(Page page, int id) {
+	public List<WineGre> selectAll(Page page, int id) {// 根据酒菜小类id查询酒菜信息
 		List<WineGre> wineGres = new ArrayList<WineGre>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(selectAll);
 			ps.setInt(1, id);
 			ps.setInt(2, page.getStartIndex());
 			ps.setInt(3, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGres = JdbcHelper.getResult(rs, WineGre.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGres;
 	}
 
 	@Override
-	public long getTotalRow(int id) {
+	public long getTotalRow(int id) {// 根据酒菜小类id查询酒菜信息总条数
 		long intTotalRow = 0;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(getTotalRow);
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
@@ -305,61 +261,65 @@ public class WineGreDaoImpl implements IWineGreDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return intTotalRow;
 	}
 
 	@Override
-	public List<WineGreBig> bigNumber() {
+	public List<WineGreBig> bigNumber() {// 查询酒菜大类编号
 		List<WineGreBig> wineGreBigs = new ArrayList<WineGreBig>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("select wineGreBigNum from sys_winegrebig");
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGreBigs = JdbcHelper.getResult(rs, WineGreBig.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGreBigs;
 	}
 
 	@Override
-	public List<WineGreSmall> smallNumber() {
+	public List<WineGreSmall> smallNumber() {// 查询酒菜小类编号
 		List<WineGreSmall> wineGreSmalls = new ArrayList<WineGreSmall>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("select wineGreSmallNum from sys_winegresmall");
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGreSmalls = JdbcHelper.getResult(rs, WineGreSmall.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGreSmalls;
 	}
 
 	@Override
-	public byte[] findPicture(int id) {
+	public byte[] findPicture(int id) {// 查询菜品图片
 		Blob blob = null;
 		byte[] bs = null;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("select Picture from sys_winegre where WineGreID=?");
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				blob = rs.getBlob("Picture");
 			}
-			bs = PublicUtil.blobToBytes(blob);
+			bs = PublicUtil.blobToBytes(blob);//blobToBytes方法把blob类型转换为byte数组
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return bs;
 	}
@@ -368,23 +328,25 @@ public class WineGreDaoImpl implements IWineGreDao {
 	public List<WineGre> selectAll(Page page) {
 		List<WineGre> wineGres = new ArrayList<WineGre>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("SELECT * FROM sys_winegre LIMIT ?,?");
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			wineGres = JdbcHelper.getResult(rs, WineGre.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGres;
 	}
 
 	@Override
 	public long getTotalRows() {
+		// 调用DaoHelper反射类的getTotalRow方法获取总条数
 		long totalRows = DaoHelper.getTotalRow("SELECT COUNT(*) FROM sys_winegre");
 		return totalRows;
 	}
@@ -393,7 +355,7 @@ public class WineGreDaoImpl implements IWineGreDao {
 	public int findSumById(int id) {
 		int sum = 0;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement("SELECT COUNT(*) SUM FROM `pw_indent` i JOIN `pw_indentdetail` d "
 					+ "ON i.`indent_id`=d.`indent_id` WHERE i.`order_status_id`!=2 AND d.`wineGreId`=?");
 			ps.setInt(1, id);
@@ -405,7 +367,7 @@ public class WineGreDaoImpl implements IWineGreDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return sum;
 	}
@@ -414,22 +376,16 @@ public class WineGreDaoImpl implements IWineGreDao {
 	public List<WineGre> findHotWineGres() {
 		List<WineGre> wineGres = new ArrayList<WineGre>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(findHotWineGres);
 			rs = ps.executeQuery();
-			while (rs.next()) {
-				if (wineGres.size() < 2) {
-					WineGre wineGre = new WineGre();
-					wineGre.setWineGreId(rs.getInt("wineGreId"));
-					wineGre.setWineGreName(rs.getString("wineGreName"));
-					wineGres.add(wineGre);
-				}
-			}
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
+			wineGres = JdbcHelper.getResult(rs, WineGre.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return wineGres;
 	}

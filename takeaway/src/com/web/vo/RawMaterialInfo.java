@@ -27,18 +27,19 @@ public class RawMaterialInfo implements Serializable {
 	private String pinyinCode;
 	private String unitName;
 	private String rawMaterialBigName;
-	private Double rawMaterialAmount;
+	private Integer rawMaterialAmount;
 	private BigDecimal totalPrice;
-	private Double reportAmount;
-	private Double rawMaterialQuantity;
-	private Double quantityRequired;
-	private Double inventoryCount;
-	private Double numberOfProfitAndLoss;
+	private Integer reportAmount;
+	private Integer rawMaterialQuantity;
+	private Integer quantityRequired;
+	private Integer inventoryCount;
+	private Integer numberOfProfitAndLoss;
 	private BigDecimal stockAmount;
 	private BigDecimal checkAmount;
 	private BigDecimal profitAndLossAmount;
 	private String remark;
-	private Double minimumQuantity;
+	private Integer minimumQuantity;
+	private Integer oldAmount;
 	private String titleInfo = "";
 
 	public Integer getRawMaterialId() {
@@ -153,11 +154,11 @@ public class RawMaterialInfo implements Serializable {
 		this.rawMaterialBigName = rawMaterialBigName;
 	}
 
-	public Double getRawMaterialAmount() {
+	public Integer getRawMaterialAmount() {
 		return rawMaterialAmount;
 	}
 
-	public void setRawMaterialAmount(Double rawMaterialAmount) {
+	public void setRawMaterialAmount(Integer rawMaterialAmount) {
 		this.rawMaterialAmount = rawMaterialAmount;
 	}
 
@@ -169,43 +170,43 @@ public class RawMaterialInfo implements Serializable {
 		this.totalPrice = totalPrice;
 	}
 
-	public Double getReportAmount() {
+	public Integer getReportAmount() {
 		return reportAmount;
 	}
 
-	public void setReportAmount(Double reportAmount) {
+	public void setReportAmount(Integer reportAmount) {
 		this.reportAmount = reportAmount;
 	}
 
-	public Double getRawMaterialQuantity() {
+	public Integer getRawMaterialQuantity() {
 		return rawMaterialQuantity;
 	}
 
-	public void setRawMaterialQuantity(Double rawMaterialQuantity) {
+	public void setRawMaterialQuantity(Integer rawMaterialQuantity) {
 		this.rawMaterialQuantity = rawMaterialQuantity;
 	}
 
-	public Double getQuantityRequired() {
+	public Integer getQuantityRequired() {
 		return quantityRequired;
 	}
 
-	public void setQuantityRequired(Double quantityRequired) {
+	public void setQuantityRequired(Integer quantityRequired) {
 		this.quantityRequired = quantityRequired;
 	}
 
-	public Double getInventoryCount() {
+	public Integer getInventoryCount() {
 		return inventoryCount;
 	}
 
-	public void setInventoryCount(Double inventoryCount) {
+	public void setInventoryCount(Integer inventoryCount) {
 		this.inventoryCount = inventoryCount;
 	}
 
-	public Double getNumberOfProfitAndLoss() {
+	public Integer getNumberOfProfitAndLoss() {
 		return numberOfProfitAndLoss;
 	}
 
-	public void setNumberOfProfitAndLoss(Double numberOfProfitAndLoss) {
+	public void setNumberOfProfitAndLoss(Integer numberOfProfitAndLoss) {
 		this.numberOfProfitAndLoss = numberOfProfitAndLoss;
 	}
 
@@ -213,7 +214,7 @@ public class RawMaterialInfo implements Serializable {
 		return stockAmount;
 	}
 
-	public void setStockAmount(BigDecimal rawMaterialPrice, Double reportAmount) {
+	public void setStockAmount(BigDecimal rawMaterialPrice, Integer reportAmount) {
 		BigDecimal bigDecimal = new BigDecimal(reportAmount);
 		this.stockAmount = bigDecimal.multiply(rawMaterialPrice);
 	}
@@ -223,7 +224,7 @@ public class RawMaterialInfo implements Serializable {
 	}
 
 	public void setCheckAmount(BigDecimal rawMaterialPrice,
-			Double inventoryCount) {
+			Integer inventoryCount) {
 		BigDecimal bigDecimal = new BigDecimal(inventoryCount);
 		this.checkAmount = bigDecimal.multiply(rawMaterialPrice);
 	}
@@ -233,7 +234,7 @@ public class RawMaterialInfo implements Serializable {
 	}
 
 	public void setProfitAndLossAmount(BigDecimal rawMaterialPrice,
-			Double numberOfProfitAndLoss) {
+			Integer numberOfProfitAndLoss) {
 		BigDecimal bigDecimal = new BigDecimal(numberOfProfitAndLoss);
 		this.profitAndLossAmount = bigDecimal.multiply(rawMaterialPrice);
 	}
@@ -270,19 +271,27 @@ public class RawMaterialInfo implements Serializable {
 		this.remark = remark;
 	}
 
-	public Double getMinimumQuantity() {
+	public Integer getMinimumQuantity() {
 		return minimumQuantity;
 	}
 
-	public void setMinimumQuantity(Double minimumQuantity) {
+	public void setMinimumQuantity(Integer minimumQuantity) {
 		this.minimumQuantity = minimumQuantity;
+	}
+
+	public Integer getOldAmount() {
+		return oldAmount;
+	}
+
+	public void setOldAmount(Integer oldAmount) {
+		this.oldAmount = oldAmount;
 	}
 
 	public String getTitleInfo() {
 		return titleInfo;
 	}
 
-	public void setTitleInfo(Double minimumQuantity, Double rawMaterialQuantity) {
+	public void setTitleInfo(Integer minimumQuantity, Integer rawMaterialQuantity) {
 		String msg = "";
 		if (minimumQuantity > rawMaterialQuantity) {
 			msg = "库存报警";

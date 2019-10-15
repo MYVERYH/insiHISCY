@@ -118,7 +118,7 @@ public class OrderServiceImpl implements IOrderService {
 	}
 
 	@Override
-	public double getRepertoryAmount(int warehouseId, int rawMaterialId) {
+	public int getRepertoryAmount(int warehouseId, int rawMaterialId) {
 		// TODO Auto-generated method stub
 		return orderDao.getRepertoryAmount(warehouseId, rawMaterialId);
 	}

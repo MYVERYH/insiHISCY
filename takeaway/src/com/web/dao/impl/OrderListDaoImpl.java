@@ -57,6 +57,10 @@ public class OrderListDaoImpl implements IOrderListDao {
 	private String deleteRF = "DELETE FROM `pw_ratingform` WHERE `indent_id` = ?";
 	private String findShoppCart = "SELECT s.*,w.`wineGreName`,w.`wineGrePrice` FROM `pw_shopping_cart` s "
 			+ "JOIN `sys_winegre` w ON s.`wineGreId` = w.`wineGreId` WHERE s.`userId`=?";
+	private String insertUserAddress = "INSERT INTO `pw_user_address`(userId,contacts,contact_number,"
+			+ "user_address) VALUE(?,?,?,?)";
+	private String updateUserAddress = "UPDATE `pw_user_address` SET userId=?,contacts=?,contact_number=?,"
+			+ "user_address=? WHERE user_address_id=?";
 
 	@Override
 	public List<IndentInfo> selectAll() {
@@ -65,17 +69,20 @@ public class OrderListDaoImpl implements IOrderListDao {
 	}
 
 	@Override
-	public IndentInfo findById(int id) {
+	public IndentInfo findById(int id) {// 根据id查询订单信息
 		IndentInfo info = new IndentInfo();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();// 获取连接
 			ps = con.prepareStatement(findById);
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取单条数据
 			info = JdbcHelper.getSingleResult(rs, IndentInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return info;
 	}
@@ -88,62 +95,68 @@ public class OrderListDaoImpl implements IOrderListDao {
 
 	@Override
 	public int update(IndentInfo info) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(update, info);
+		// 调用DaoHelper反射类的insertUpdate方法修改订单信息
+		int flag = DaoHelper.insertUpdate(update, info);
 		return flag;
 	}
 
 	@Override
-	public int delete(int id) {
+	public int delete(int id) {// 删除订单信息，包括订单明细和订单评价信息
 		int flag = 0;
 		try {
-			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
+			con = DBUtil.getConnection();// 获取连接
+			con.setAutoCommit(false);// 关闭自动提交
 			ps = con.prepareStatement(delete);
 			ps.setInt(1, id);
 			flag = ps.executeUpdate();
-			if (flag > 0) {
+			if (flag > 0) {// 判断删除订单信息是否成功
 				flag = 0;
 				ps = con.prepareStatement(deleteDetail);
 				ps.setInt(1, id);
 				flag = ps.executeUpdate();
+				// 根据id查询订单评价信息
 				ps = con.prepareStatement(findByID);
 				ps.setInt(1, id);
 				rs = ps.executeQuery();
-				RatingForm ratingForm = JdbcHelper.getSingleResult(rs, RatingForm.class);
-				if (ratingForm != null) {
+				// 调用JdbcHelper反射类的getResult方法获取单条数据
+				RatingForm ratingForm = JdbcHelper.getSingleResult(rs,
+						RatingForm.class);
+				// 判断订单明细是否删除成功和订单评价信息是否为空，不为空则删除
+				if (flag > 0 && ratingForm != null) {
 					flag = 0;
 					ps = con.prepareStatement(deleteRF);
 					ps.setInt(1, id);
 					flag = ps.executeUpdate();
+					con.commit();// 提交
 				}
 			}
-			con.commit();
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();//事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return flag;
 	}
 
 	@Override
-	public List<IndentInfo> selectAll(String parameter, Page page) {
+	public List<IndentInfo> selectAll(String parameter, Page page) {//查询订单信息
 		List<IndentInfo> infos = new ArrayList<IndentInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectAll);
+			//查询条件拼接
 			if (parameter != "" && !parameter.isEmpty()) {
 				if (PublicUtil.isChinese(parameter)) {
-					buffer.append("WHERE s.`order_status` = '" + parameter + "'");
+					buffer.append("WHERE s.`order_status` = '" + parameter
+							+ "'");
 				} else {
-					buffer.append(" WHERE i.`indent_num` = '" + parameter + "' OR i.`indent_time` LIKE '%" + parameter
-							+ "%'");
+					buffer.append(" WHERE i.`indent_num` = '" + parameter
+							+ "' OR i.`indent_time` LIKE '%" + parameter + "%'");
 				}
 			}
 			buffer.append(" GROUP BY i.`indent_id` ORDER BY i.`indent_id` DESC LIMIT ?,?");
@@ -152,12 +165,13 @@ public class OrderListDaoImpl implements IOrderListDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, IndentInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
@@ -169,17 +183,19 @@ public class OrderListDaoImpl implements IOrderListDao {
 			if (PublicUtil.isChinese(parameter)) {
 				buffer.append("WHERE s.`order_status` = '" + parameter + "'");
 			} else {
-				buffer.append(
-						" WHERE i.`indent_num` = '" + parameter + "' OR i.`indent_time` LIKE '%" + parameter + "%'");
+				buffer.append(" WHERE i.`indent_num` = '" + parameter
+						+ "' OR i.`indent_time` LIKE '%" + parameter + "%'");
 			}
 		}
 		buffer.append(" GROUP BY i.`indent_id`) a");
+		//调用DaoHelper反射类的getTotalRow方法获取订单信息总条数
 		long intTotalRow = DaoHelper.getTotalRow(buffer.toString());
 		return intTotalRow;
 	}
 
 	@Override
-	public List<IndentInfo> selectWineGre(int indentId, Page page, String findType) {
+	public List<IndentInfo> selectWineGre(int indentId, Page page,
+			String findType) {//查询菜品信息
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -187,6 +203,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 		try {
 			StringBuffer buffer = new StringBuffer(selectWineGre);
 			con = DBUtil.getConnection();
+			//根据findType参数查询不同菜品信息
 			if ("selectWineGre".equals(findType)) {
 				buffer.append(" ORDER BY w.`wineGreId` LIMIT ?,?");
 				ps = con.prepareStatement(buffer.toString());
@@ -198,12 +215,13 @@ public class OrderListDaoImpl implements IOrderListDao {
 				ps.setInt(1, indentId);
 			}
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, IndentInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
@@ -214,12 +232,13 @@ public class OrderListDaoImpl implements IOrderListDao {
 		if (indentId > 0) {
 			buffer.append(" WHERE d.`indent_id` = " + indentId);
 		}
+		//调用DaoHelper反射类的getTotalRow方法获取菜品信息总条数
 		long intTotalRow = DaoHelper.getTotalRow(buffer.toString());
 		return intTotalRow;
 	}
 
 	@Override
-	public byte[] selectPicture(int id) {
+	public byte[] selectPicture(int id) {//根据id查询菜品图片
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -242,21 +261,22 @@ public class OrderListDaoImpl implements IOrderListDao {
 	}
 
 	@Override
-	public List<DeliveryStaff> selectPS(boolean state, Page page) {
+	public List<DeliveryStaff> selectPS(boolean state, Page page) {//查询配送员信息
 		List<DeliveryStaff> deliveryStaffs = new ArrayList<DeliveryStaff>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(selectPS);
 			ps.setBoolean(1, state);
 			ps.setInt(2, page.getStartIndex());
 			ps.setInt(3, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			deliveryStaffs = JdbcHelper.getResult(rs, DeliveryStaff.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return deliveryStaffs;
 	}
@@ -265,7 +285,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 	public long getTotalRows(boolean state) {
 		int intTotalRow = 0;
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(getPSTotalRows);
 			ps.setBoolean(1, state);
 			rs = ps.executeQuery();
@@ -276,48 +296,49 @@ public class OrderListDaoImpl implements IOrderListDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return intTotalRow;
 	}
 
 	@Override
 	public int insertDS(DeliveryStaff deliveryStaff) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(insertDS, deliveryStaff);
+		//调用DaoHelper反射类的insertUpdate方法新增配送信息
+		int flag = DaoHelper.insertUpdate(insertDS, deliveryStaff);
 		return flag;
 	}
 
 	@Override
 	public int updateDS(DeliveryStaff deliveryStaff) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(updateDS, deliveryStaff);
+		//调用DaoHelper反射类的insertUpdate方法修改配送信息
+		int flag = DaoHelper.insertUpdate(updateDS, deliveryStaff);
 		return flag;
 	}
 
 	@Override
-	public RatingForm findByID(int indentId) {
+	public RatingForm findByID(int indentId) {//根据订单id查询订单评价信息
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		RatingForm ratingForm = new RatingForm();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findByID);
 			ps.setInt(1, indentId);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取单条数据
 			ratingForm = JdbcHelper.getSingleResult(rs, RatingForm.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return ratingForm;
 	}
 
 	@Override
-	public int insertShoppCart(ShoppingCart shoppingCart) {
+	public int insertShoppCart(ShoppingCart shoppingCart) {//新增用户购物车信息
 		ShoppingCart cart = new ShoppingCart();
 		int flag = 0;
 		try {
@@ -326,6 +347,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 			ps.setInt(1, shoppingCart.getUserId());
 			ps.setInt(2, shoppingCart.getWineGreId());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取单条数据
 			cart = JdbcHelper.getSingleResult(rs, ShoppingCart.class);
 			if (cart != null) {
 				cart.setWineGreQuantity(cart.getWineGreQuantity() + 1);
@@ -345,13 +367,14 @@ public class OrderListDaoImpl implements IOrderListDao {
 	}
 
 	@Override
-	public List<ShoppingCartInfo> findShoppCart(int userId) {
+	public List<ShoppingCartInfo> findShoppCart(int userId) {//查询用户购物车信息
 		List<ShoppingCartInfo> shoppingCarts = new ArrayList<ShoppingCartInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findShoppCart);
 			ps.setInt(1, userId);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			shoppingCarts = JdbcHelper.getResult(rs, ShoppingCartInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -363,7 +386,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 	}
 
 	@Override
-	public int delShoppCart(int userId, int wineGreId) {
+	public int delShoppCart(int userId, int wineGreId) {//删除购物车信息
 		int flag = 0;
 		try {
 			con = DBUtil.getConnection();
@@ -382,6 +405,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 
 	@Override
 	public int updateShoppCart(ShoppingCart shoppingCart) {
+		//调用DaoHelper反射类的insertUpdate方法修改购物车信息
 		int flag = DaoHelper.insertUpdate("UPDATE `pw_shopping_cart` SET wineGreQuantity=? WHERE shoppingCartId=?",
 				shoppingCart);
 		return flag;
@@ -395,6 +419,7 @@ public class OrderListDaoImpl implements IOrderListDao {
 			ps = con.prepareStatement("SELECT * FROM `pw_user_address` WHERE `userId`=?");
 			ps.setInt(1, userId);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			addresses = JdbcHelper.getResult(rs, UserAddress.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -403,6 +428,27 @@ public class OrderListDaoImpl implements IOrderListDao {
 			DBUtil.close(con, ps, rs);
 		}
 		return addresses;
+	}
+
+	@Override
+	public int insertUserAddress(UserAddress userAddress) {
+		//调用DaoHelper反射类的insertUpdate方法新增用户地址信息
+		int flag = DaoHelper.insertUpdate(insertUserAddress, userAddress);
+		return flag;
+	}
+
+	@Override
+	public int updateUserAddress(UserAddress userAddress) {
+		//调用DaoHelper反射类的insertUpdate方法修改用户地址信息
+		int flag = DaoHelper.insertUpdate(updateUserAddress, userAddress);
+		return flag;
+	}
+
+	@Override
+	public int delUserAddress(int id) {
+		//调用DaoHelper反射类的delete方法删除用户地址信息
+		int flag = DaoHelper.delete("DELETE FROM `pw_user_address` WHERE user_address_id=?", id);
+		return flag;
 	}
 
 }

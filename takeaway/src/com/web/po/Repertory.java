@@ -16,6 +16,21 @@ public class Repertory implements Serializable {
 	private Integer rawMaterialQuantity;
 	private BigDecimal totalPrice;
 
+	public Repertory() {
+		super();
+	}
+
+	public Repertory(Integer repertoryId, Integer warehouseId,
+			Integer rawMaterialId, Integer rawMaterialQuantity,
+			BigDecimal totalPrice) {
+		super();
+		this.repertoryId = repertoryId;
+		this.warehouseId = warehouseId;
+		this.rawMaterialId = rawMaterialId;
+		this.rawMaterialQuantity = rawMaterialQuantity;
+		this.totalPrice = totalPrice;
+	}
+
 	public Integer getRepertoryId() {
 		return repertoryId;
 	}

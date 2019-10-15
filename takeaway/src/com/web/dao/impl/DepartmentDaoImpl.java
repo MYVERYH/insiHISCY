@@ -51,12 +51,13 @@ public class DepartmentDaoImpl implements IDepartmentDao {
 			+ "quantity_required=? WHERE material_requirement_id=?";
 
 	@Override
-	public List<Department> selectAll() {
+	public List<Department> selectAll() {//查询所有部门信息
 		List<Department> departments = new ArrayList<Department>();
 		try {
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement("SELECT * FROM pw_department");
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			departments = JdbcHelper.getResult(rs, Department.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -69,6 +70,7 @@ public class DepartmentDaoImpl implements IDepartmentDao {
 
 	@Override
 	public Department findById(int id) {
+		//调用DaoHelper反射类的findByID方法根据id查询唯一的一条数据
 		Department department = DaoHelper.findByID(findById, Department.class,
 				id);
 		return department;
@@ -76,18 +78,21 @@ public class DepartmentDaoImpl implements IDepartmentDao {
 
 	@Override
 	public int insert(Department department) {
+		//调用DaoHelper反射类的insertUpdate方法新增部门信息
 		int flag = DaoHelper.insertUpdate(insert, department);
 		return flag;
 	}
 
 	@Override
 	public int update(Department department) {
+		//调用DaoHelper反射类的insertUpdate方法修改部门信息
 		int flag = DaoHelper.insertUpdate(update, department);
 		return flag;
 	}
 
 	@Override
 	public int delete(int id) {
+		//调用DaoHelper反射类的delete方法删除部门信息
 		int flag = DaoHelper.delete(delete, id);
 		return flag;
 	}
@@ -96,43 +101,46 @@ public class DepartmentDaoImpl implements IDepartmentDao {
 	public List<DepartmentInfo> selectAll(Page page) {
 		List<DepartmentInfo> infos = new ArrayList<DepartmentInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(selectAll);
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, DepartmentInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
 
 	@Override
 	public long getTotalRows() {
+		//调用DaoHelper反射类的getTotalRow方法获取数据总条数
 		long totalRows = DaoHelper.getTotalRow(getTotalRows);
 		return totalRows;
 	}
 
 	@Override
-	public List<RawMaterialInfo> findRequirement(Page page, int departmentId) {
+	public List<RawMaterialInfo> findRequirement(Page page, int departmentId) {//查询部门需求信息
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findRequirement);
 			ps.setInt(1, departmentId);
 			ps.setInt(2, page.getStartIndex());
 			ps.setInt(3, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RawMaterialInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return infos;
 	}
@@ -159,12 +167,14 @@ public class DepartmentDaoImpl implements IDepartmentDao {
 
 	@Override
 	public int insert(MaterialRequirement requirement) {
+		//调用DaoHelper反射类的insertUpdate方法新增部门需求信息
 		int flag = DaoHelper.insertUpdate(insertRequirement, requirement);
 		return flag;
 	}
 
 	@Override
 	public int update(MaterialRequirement requirement) {
+		//调用DaoHelper反射类的insertUpdate方法修改部门需求信息
 		int flag = DaoHelper.insertUpdate(updateRequirement, requirement);
 		return flag;
 	}

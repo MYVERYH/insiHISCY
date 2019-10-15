@@ -39,7 +39,8 @@ public class BillDaoImpl implements IBillDao {
 			+ "raw_material_quantity,total_price) VALUES(?,?,?,?)";
 	private String updateRepertory = "UPDATE pw_repertory SET warehouseId=?,raw_material_id=?,"
 			+ "raw_material_quantity=?,total_price=? WHERE repertory_id=?";
-	private String findSingle = "SELECT `raw_material_price` FROM `pw_raw_material` " + "WHERE `raw_material_id`=?";
+	private String findSingle = "SELECT `raw_material_price` FROM `pw_raw_material` "
+			+ "WHERE `raw_material_id`=?";
 	private String selectCheck = "SELECT r.`bills_id`,b.`bills_num`,w.`warehouseName`,s.`staffName`,"
 			+ "b.`bills_entry_time`,b.`bills_remark` FROM `pw_repertory_check` r JOIN `pw_bills` b "
 			+ "ON r.`bills_id` = b.`bills_id` JOIN `pw_warehouse` w ON b.`warehouseId` = w.`warehouseId` "
@@ -211,88 +212,94 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public int insert(Bills bills, List<BillsDetail> billsDetails) {
+	public int insert(Bills bills, List<BillsDetail> billsDetails) {// 新增单据和单据明细
 		int flag = 0;
 		int key = 0;
 		try {
 			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
+			con.setAutoCommit(false);// 关闭自动提交
+			// 调用DaoHelper反射类的setPsToSQLException方法新增单据信息，返回新增的主键id
 			key = DaoHelper.setPsToSQLException(con, bills, insert);
 			if (key > 0) {
-				int total = 0;
-				int f = 0;
+				int total = billsDetails.size();// 记录需要新增的数据条数
+				int f = 0;// 记录新增成功的数据条数
 				for (BillsDetail billsDetail : billsDetails) {
-					total++;
 					billsDetail.setBillsId(key);
-					flag = DaoHelper.setPsToSQLException(con, billsDetail, insertDetail) > 0 ? 1 : 0;
-					f += flag;
+					// 调用DaoHelper反射类的setPsToSQLException方法新增单据明细信息，返回新增的主键id
+					flag = DaoHelper.setPsToSQLException(con, billsDetail,
+							insertDetail) > 0 ? 1 : 0;// 三目运算符判断新增的主键id是否大于0，大于0则返回1，否则返回0
+					f += flag;// 新增成功叠加
 				}
-				if (total == f) {
-					con.commit();
+				if (total == f) {// 判断新增成功条数是否与需要新增数据条数是否相等，相等则提交
+					con.commit();// 提交事务
 				}
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();// 事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return key;
 	}
 
 	@Override
-	public int insertRepertory(Bills bills, List<BillsDetail> billsDetails) {
+	public int insertRepertory(Bills bills, List<BillsDetail> billsDetails) {// 新增库存信息
 		int flag = 0;
 		try {
 			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
-			int total = 0;
-			int f = 0;
+			con.setAutoCommit(false);// 关闭自动提交
+			int total = billsDetails.size();// 记录需要新增数据条数
+			int f = 0;// 记录新增成功数据条数
 			for (BillsDetail billsDetail : billsDetails) {
-				total++;
+				// 查询库存是否已有当前原料信息
 				ps = con.prepareStatement(findRepertory);
 				ps.setInt(1, bills.getWarehouseId());
 				ps.setInt(2, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
-				Repertory repertory = JdbcHelper.getSingleResult(rs, Repertory.class);
+				Repertory repertory = JdbcHelper.getSingleResult(rs,
+						Repertory.class);
 				ps = con.prepareStatement(findSingle);
 				ps.setInt(1, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
 				BigDecimal bigDecimal = null;
-				Repertory repertory2 = new Repertory();
+				Repertory repertory2 = null;
 				while (rs.next()) {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
-				if (repertory != null) {
-					int count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
+				if (repertory != null) {// 若有，则更新库存信息
+					int count = repertory.getRawMaterialQuantity()
+							+ billsDetail.getRawMaterialAmount();
 					BigDecimal decimal = new BigDecimal(count);
-					repertory2.setRepertoryId(repertory.getRepertoryId());
-					repertory2.setWarehouseId(bills.getWarehouseId());
-					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
-					repertory2.setRawMaterialQuantity(count);
-					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
-					flag = DaoHelper.setPsToSQLException(con, repertory2, updateRepertory) > 0 ? 1 : 0;
-				} else {
-					BigDecimal decimal = new BigDecimal(billsDetail.getRawMaterialAmount());
-					repertory2.setWarehouseId(bills.getWarehouseId());
-					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
-					repertory2.setRawMaterialQuantity(billsDetail.getRawMaterialAmount());
-					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
-					flag = DaoHelper.setPsToSQLException(con, repertory2, insertRepertory) > 0 ? 1 : 0;
+					repertory2 = new Repertory(repertory.getRepertoryId(),
+							bills.getWarehouseId(),
+							billsDetail.getRawMaterialId(), count,
+							decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2,
+							updateRepertory) > 0 ? 1 : 0;
+				} else {// 若没有，则新增当前原料信息
+					BigDecimal decimal = new BigDecimal(
+							billsDetail.getRawMaterialAmount());
+					repertory2 = new Repertory(null, bills.getWarehouseId(),
+							billsDetail.getRawMaterialId(),
+							billsDetail.getRawMaterialAmount(),
+							decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2,
+							insertRepertory) > 0 ? 1 : 0;
 				}
-				f += flag;
+				f += flag;// 新增成功叠加
 			}
-			if (total == f) {
-				con.commit();
+			if (total == f) {// 判断新增成功条数是否与需要新增数据条数是否相等，相等则提交
+				con.commit();// 提交事务
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();// 事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -305,21 +312,22 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public int updateRepertory(Bills bills, List<BillsDetail> billsDetails, boolean b) {
+	public int updateRepertory(Bills bills, List<BillsDetail> billsDetails,
+			boolean b) {// 更新库存信息
 		int flag = 0;
 		try {
 			con = DBUtil.getConnection();
-			con.setAutoCommit(false);
-			int total = 0;
-			int f = 0;
+			con.setAutoCommit(false);// 关闭自动提交
+			int total = billsDetails.size();// 记录需要新增的数据条数
+			int f = 0;// 记录新增成功的数据条数
 			for (BillsDetail billsDetail : billsDetails) {
 				int count = 0;
-				total++;
 				ps = con.prepareStatement(findRepertory);
 				ps.setInt(1, bills.getWarehouseId());
 				ps.setInt(2, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
-				Repertory repertory = JdbcHelper.getSingleResult(rs, Repertory.class);
+				Repertory repertory = JdbcHelper.getSingleResult(rs,
+						Repertory.class);
 				ps = con.prepareStatement(findSingle);
 				ps.setInt(1, billsDetail.getRawMaterialId());
 				rs = ps.executeQuery();
@@ -328,53 +336,61 @@ public class BillDaoImpl implements IBillDao {
 					bigDecimal = rs.getBigDecimal("raw_material_price");
 				}
 				if (b) {
-					count = repertory.getRawMaterialQuantity() - billsDetail.getRawMaterialAmount();
+					count = repertory.getRawMaterialQuantity()
+							- billsDetail.getRawMaterialAmount();
 				} else {
-					count = repertory.getRawMaterialQuantity() + billsDetail.getRawMaterialAmount();
+					count = repertory.getRawMaterialQuantity()
+							+ billsDetail.getRawMaterialAmount();
 				}
 				if (count > -1) {
 					BigDecimal decimal = new BigDecimal(count);
-					Repertory repertory2 = new Repertory();
-					repertory2.setRepertoryId(repertory.getRepertoryId());
-					repertory2.setWarehouseId(bills.getWarehouseId());
-					repertory2.setRawMaterialId(billsDetail.getRawMaterialId());
-					repertory2.setRawMaterialQuantity(count);
-					repertory2.setTotalPrice(decimal.multiply(bigDecimal));
-					flag = DaoHelper.setPsToSQLException(con, repertory2, updateRepertory) > 0 ? 1 : 0;
-					f += flag;
+					Repertory repertory2 = new Repertory(
+							repertory.getRepertoryId(), bills.getWarehouseId(),
+							billsDetail.getRawMaterialId(), count,
+							decimal.multiply(bigDecimal));
+					flag = DaoHelper.setPsToSQLException(con, repertory2,
+							updateRepertory) > 0 ? 1 : 0;
+					f += flag;// 新增成功叠加
 				}
 			}
-			if (total == f) {
-				con.commit();
+			if (total == f) {// 判断新增成功条数是否与需要新增数据条数是否相等，相等则提交
+				con.commit();// 提交事务
 			}
 		} catch (SQLException e) {
 			try {
-				con.rollback();
+				con.rollback();// 事务回滚
 			} catch (SQLException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);// 关闭con, ps, rs
 		}
 		return flag;
 	}
 
 	@Override
-	public List<BillsInfo> selectCheck(SelectBills selectBills, Page page) {
+	public List<BillsInfo> selectCheck(SelectBills selectBills, Page page) {// 查询盘点单据信息
 		List<BillsInfo> infos = new ArrayList<BillsInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectCheck);
-			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
+			// 查询条件拼接
+			if (!"".equals(selectBills.getBillsNum())
+					&& !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '"
+						+ selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
@@ -386,6 +402,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, BillsInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -401,15 +418,21 @@ public class BillDaoImpl implements IBillDao {
 		long totalRow = 0;
 		try {
 			StringBuffer buffer = new StringBuffer(getCheckTotalRow);
-			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum())
+					&& !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '"
+						+ selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getStaffId() > 0) {
@@ -431,36 +454,49 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectOrderMaterial(SelectBills selectBills, Page page, String findType) {
+	public List<RawMaterialInfo> selectOrderMaterial(SelectBills selectBills,
+			Page page, String findType) {// 查询单据原料信息
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectOrderMaterial);
-			if ("findMaterial1".equals(findType)) {
+			// 根据findType参数判断查询不同的单据下的原料信息
+			if ("findMaterial1".equals(findType)) {// 库存盘点单据
 				buffer.append(" JOIN `pw_repertory_check` a ON b.`bills_id` = a.`bills_id`");
-			} else if ("findMaterial2".equals(findType)) {
+			} else if ("findMaterial2".equals(findType)) {// 仓库调拔单
 				buffer.append(" JOIN `pw_warehouse_transfer_order` a ON b.`bills_id` = a.`bills_id`");
-			} else if ("findMaterial3".equals(findType)) {
+			} else if ("findMaterial3".equals(findType)) {// 领料单
 				buffer.append(" JOIN `pw_stocks_requisition` a ON b.`bills_id` = a.`bills_id`");
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			// 查询条件的拼接
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = "
+						+ selectBills.getWarehouseID());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = "
+						+ selectBills.getDepartmentId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num` = '" + selectBills.getRawMaterialNum() + "'");
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num` = '"
+						+ selectBills.getRawMaterialNum() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY b.`bills_id` DESC,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -468,6 +504,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RawMaterialInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -479,7 +516,8 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public long getOrderMaterialTotalRow(SelectBills selectBills, String findType) {
+	public long getOrderMaterialTotalRow(SelectBills selectBills,
+			String findType) {
 		long totalRow = 0;
 		try {
 			StringBuffer buffer = new StringBuffer(getOrderMaterialTotalRow);
@@ -490,25 +528,35 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findMaterial3".equals(findType)) {
 				buffer.append(" JOIN `pw_stocks_requisition` a ON b.`bills_id` = a.`bills_id`");
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" WHERE b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = "
+						+ selectBills.getWarehouseID());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = "
+						+ selectBills.getDepartmentId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num` = '" + selectBills.getRawMaterialNum() + "'");
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num` = '"
+						+ selectBills.getRawMaterialNum() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -526,7 +574,7 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectOrderDetail(int id, Page page) {
+	public List<RawMaterialInfo> selectOrderDetail(int id, Page page) {// 查询单据明细原料信息
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			con = DBUtil.getConnection();
@@ -535,6 +583,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(2, page.getStartIndex());
 			ps.setInt(3, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RawMaterialInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -566,33 +615,35 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<BillsInfo> selectOrder(SelectBills selectBills, Page page, String findType) {
+	public List<BillsInfo> selectOrder(SelectBills selectBills, Page page,
+			String findType) {// 查询单据信息
 		List<BillsInfo> infos = new ArrayList<BillsInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer();
-			if ("findGodownOrders".equals(findType)) {
+			// 根据findType参数判断查询不同的单据信息
+			if ("findGodownOrders".equals(findType)) {// 入库单
 				buffer.append("SELECT b.`bills_id`,b.`bills_num`,s.`supplierName`,w.`warehouseName`,"
 						+ "s1.`staffName`,(SELECT `staffName` FROM `pw_staff` WHERE `staffId` = b.`staffId`) "
 						+ "staffNames,b.`bills_entry_time`,b.`bills_remark`,b.`bills_money` FROM "
 						+ "`pw_godown_orders` a JOIN `pw_supplier` s ON a.`supplierId` =  s.`supplierId`");
-			} else if ("findCreditOrders".equals(findType)) {
+			} else if ("findCreditOrders".equals(findType)) {// 退货单
 				buffer.append("SELECT b.`bills_id`,b.`bills_num`,s.`supplierName`,w.`warehouseName`,"
 						+ "s1.`staffName`,(SELECT `staffName` FROM `pw_staff` WHERE `staffId` = b.`staffId`) "
 						+ "staffNames,b.`bills_entry_time`,b.`bills_remark`,b.`bills_money` FROM "
 						+ "`pw_credit_orders` a JOIN `pw_supplier` s ON a.`supplierId` =  s.`supplierId`");
-			} else if ("findStocksRequisition".equals(findType)) {
+			} else if ("findStocksRequisition".equals(findType)) {// 领料单
 				buffer.append("SELECT b.`bills_id`,b.`bills_num`,d.`departmentName`,w.`warehouseName`,"
 						+ "s1.`staffName`,(SELECT `staffName` FROM `pw_staff` WHERE `staffId` = b.`staffId`) "
 						+ "staffNames,b.`bills_entry_time`,b.`bills_remark`,b.`bills_money` "
 						+ "FROM `pw_stocks_requisition` a JOIN `pw_department` d "
 						+ "ON a.`departmentId` = d.`departmentId`");
-			} else if ("findPickingCreditOrders".equals(findType)) {
+			} else if ("findPickingCreditOrders".equals(findType)) {// 领料退货单
 				buffer.append("SELECT b.`bills_id`,b.`bills_num`,d.`departmentName`,w.`warehouseName`,"
 						+ "s1.`staffName`,(SELECT `staffName` FROM `pw_staff` WHERE `staffId` = b.`staffId`) "
 						+ "staffNames,b.`bills_entry_time`,b.`bills_remark`,b.`bills_money` "
 						+ "FROM `pw_picking_credit_orders` a JOIN `pw_department` d "
 						+ "ON a.`departmentId` = d.`departmentId`");
-			} else if ("findWarehouseTransferOrder".equals(findType)) {
+			} else if ("findWarehouseTransferOrder".equals(findType)) {// 仓库调拔单
 				buffer.append("SELECT b.`bills_id`,b.`bills_num`,w.`warehouseName`,(SELECT `warehouseName` "
 						+ "FROM `pw_warehouse` WHERE `warehouseId` = a.`warehouseId`) warehouseNames,"
 						+ "s1.`staffName`,(SELECT `staffName` FROM `pw_staff` WHERE `staffId` = b.`staffId`) "
@@ -600,25 +651,35 @@ public class BillDaoImpl implements IBillDao {
 						+ "FROM `pw_warehouse_transfer_order` a");
 			}
 			buffer.append(findOrder);
-			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
+			// 查询条件拼接
+			if (!"".equals(selectBills.getBillsNum())
+					&& !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '"
+						+ selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
+				buffer.append(" AND a.`supplierId` = "
+						+ selectBills.getSupplierId());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = "
+						+ selectBills.getDepartmentId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = "
+						+ selectBills.getWarehouseID());
 			}
 			if (selectBills.getStaffID() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffID());
@@ -632,6 +693,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, BillsInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -664,25 +726,34 @@ public class BillDaoImpl implements IBillDao {
 						+ "ON a.`warehouseId` = w2.`warehouseId`");
 			}
 			buffer.append(findOrder);
-			if (!"".equals(selectBills.getBillsNum()) && !selectBills.getBillsNum().isEmpty()) {
-				buffer.append(" WHERE b.`bills_num` = '" + selectBills.getBillsNum() + "'");
+			if (!"".equals(selectBills.getBillsNum())
+					&& !selectBills.getBillsNum().isEmpty()) {
+				buffer.append(" WHERE b.`bills_num` = '"
+						+ selectBills.getBillsNum() + "'");
 			}
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" AND b.`warehouseId` = " + selectBills.getWarehouseId());
+				buffer.append(" AND b.`warehouseId` = "
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time`BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" AND a.`supplierId` = " + selectBills.getSupplierId());
+				buffer.append(" AND a.`supplierId` = "
+						+ selectBills.getSupplierId());
 			}
 			if (selectBills.getDepartmentId() > 0) {
-				buffer.append(" AND a.`departmentId` = " + selectBills.getDepartmentId());
+				buffer.append(" AND a.`departmentId` = "
+						+ selectBills.getDepartmentId());
 			}
 			if (selectBills.getWarehouseID() > 0) {
-				buffer.append(" AND a.`warehouseId` = " + selectBills.getWarehouseID());
+				buffer.append(" AND a.`warehouseId` = "
+						+ selectBills.getWarehouseID());
 			}
 			if (selectBills.getStaffID() > 0) {
 				buffer.append(" AND b.`staffId` = " + selectBills.getStaffID());
@@ -706,21 +777,29 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectNowRepertory(SelectBills selectBills, Page page) {
+	public List<RawMaterialInfo> selectNowRepertory(SelectBills selectBills,
+			Page page) {
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectNowRepertory);
+			// 查询条件拼接
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`="
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`="
+						+ selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`="
+						+ selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY w.`warehouseId`,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -728,6 +807,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RawMaterialInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -744,16 +824,22 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(getNowRepertoryTotalRow);
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`="
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`="
+						+ selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`="
+						+ selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -771,21 +857,28 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RepertoryInfo> selectRepertory(SelectBills selectBills, Page page, String findType) {
+	public List<RepertoryInfo> selectRepertory(SelectBills selectBills,
+			Page page, String findType) {// 查询库存原料信息
 		List<RepertoryInfo> infos = new ArrayList<RepertoryInfo>();
 		try {
 			con = DBUtil.getConnection();
 			StringBuffer buffer = new StringBuffer();
-			if ("findInOrOutRepertory".equals(findType)) {
+			// 根据findType参数判断不同库存原料信息
+			if ("findInOrOutRepertory".equals(findType)) {// 库存进销查询
 				buffer.append(selectRepertory);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`="
+							+ selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum())
+						&& !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`="
+							+ selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName())
+						&& !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%"
+							+ selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id` ORDER BY p.`warehouseId`,"
 						+ "p.`raw_material_id` LIMIT ?,?");
@@ -796,16 +889,21 @@ public class BillDaoImpl implements IBillDao {
 				ps.setString(4, selectBills.getMonth() + "%");
 				ps.setInt(5, page.getStartIndex());
 				ps.setInt(6, page.getLimit());
-			} else if ("findRepertoryDetail".equals(findType)) {
+			} else if ("findRepertoryDetail".equals(findType)) {// 库存明细查询
 				buffer.append(findRepertoryDetail);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`="
+							+ selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum())
+						&& !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`="
+							+ selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName())
+						&& !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%"
+							+ selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id` ORDER BY p.`warehouseId`,"
 						+ "p.`raw_material_id` LIMIT ?,?");
@@ -818,6 +916,7 @@ public class BillDaoImpl implements IBillDao {
 				ps.setInt(16, page.getLimit());
 			}
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RepertoryInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -837,13 +936,18 @@ public class BillDaoImpl implements IBillDao {
 			if ("findInOrOutRepertory".equals(findType)) {
 				buffer.append(getRepertoryTotalRows);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`="
+							+ selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum())
+						&& !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`="
+							+ selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName())
+						&& !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%"
+							+ selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id`) a");
 				ps = con.prepareStatement(buffer.toString());
@@ -851,13 +955,18 @@ public class BillDaoImpl implements IBillDao {
 			} else if ("findRepertoryDetail".equals(findType)) {
 				buffer.append(getRepertoryDetailTotalRows);
 				if (selectBills.getWarehouseId() > 0) {
-					buffer.append(" AND p.`warehouseId`=" + selectBills.getWarehouseId());
+					buffer.append(" AND p.`warehouseId`="
+							+ selectBills.getWarehouseId());
 				}
-				if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-					buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+				if (!"".equals(selectBills.getRawMaterialNum())
+						&& !selectBills.getRawMaterialNum().isEmpty()) {
+					buffer.append(" AND r.`raw_material_num`="
+							+ selectBills.getRawMaterialNum());
 				}
-				if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-					buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+				if (!"".equals(selectBills.getRawMaterialName())
+						&& !selectBills.getRawMaterialName().isEmpty()) {
+					buffer.append(" AND r.`raw_material_name` like '%"
+							+ selectBills.getRawMaterialName() + "%'");
 				}
 				buffer.append(" GROUP BY b.`warehouseId`,p.`raw_material_id`) a");
 				ps = con.prepareStatement(buffer.toString());
@@ -878,29 +987,37 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<BillsInfo> selectSupplier(SelectBills selectBills, Page page) {
+	public List<BillsInfo> selectSupplier(SelectBills selectBills, Page page) {// 查询供应商供货信息
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		List<BillsInfo> infos = new ArrayList<BillsInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectSupplier);
+			// 查询条件拼接
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" WHERE p.`supplierId`=" + selectBills.getSupplierId());
+				buffer.append(" WHERE p.`supplierId`="
+						+ selectBills.getSupplierId());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`="
+						+ selectBills.getRawMaterialBigId());
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND p.`staffId`=" + selectBills.getStaffId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY b.`bills_id`,r.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -908,6 +1025,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, BillsInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -927,21 +1045,28 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer(getSupplierTotalRow);
 			if (selectBills.getSupplierId() > 0) {
-				buffer.append(" WHERE p.`supplierId`=" + selectBills.getSupplierId());
+				buffer.append(" WHERE p.`supplierId`="
+						+ selectBills.getSupplierId());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`="
+						+ selectBills.getRawMaterialBigId());
 			}
 			if (selectBills.getStaffId() > 0) {
 				buffer.append(" AND p.`staffId`=" + selectBills.getStaffId());
 			}
-			if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-					&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-				buffer.append(" AND b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
+			if (!"".equals(selectBills.getStartTime())
+					&& !selectBills.getStartTime().isEmpty()
+					&& !"".equals(selectBills.getEndTime())
+					&& !selectBills.getEndTime().isEmpty()) {
+				buffer.append(" AND b.`bills_entry_time` BETWEEN '"
+						+ selectBills.getStartTime() + "' AND '"
 						+ selectBills.getEndTime() + "'");
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
@@ -959,50 +1084,64 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<SupplierPaymentInfo> findPaymentInfo(SelectBills selectBills, Page page, String findType) {
+	public List<SupplierPaymentInfo> findPaymentInfo(SelectBills selectBills,
+			Page page, String findType) {
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		List<SupplierPaymentInfo> infos = new ArrayList<SupplierPaymentInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer();
-			if ("findSupplierPayment".equals(findType)) {
+			// 根据findType参数判断查询不同的供应商信息
+			if ("findSupplierPayment".equals(findType)) {// 供应商应付款信息
 				buffer.append("SELECT *, s.`total` - (CASE WHEN (SELECT sp.`total_money` "
 						+ "FROM `pw_supplier_payment` sp WHERE s.`supplierId` = sp.`supplierId`");
-				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
+				if (!"".equals(selectBills.getStartTime())
+						&& !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime())
+						&& !selectBills.getEndTime().isEmpty()) {
 					if ("2000-01-01".equals(selectBills.getStartTime())
 							&& "2100-12-31".equals(selectBills.getEndTime())) {
 						buffer.append(") IS NULL THEN '0' ELSE (SELECT sp.`total_money` "
 								+ "FROM `pw_supplier_payment` sp WHERE s.`supplierId` = sp.`supplierId`) "
 								+ "END) totalMoney FROM" + findPaymentInfo);
 					} else {
-						buffer.append(" AND sp.`start_date` <= '" + selectBills.getStartTime()
-								+ "' AND sp.`end_date` >= '" + selectBills.getEndTime() + "') IS NULL THEN '0' "
+						buffer.append(" AND sp.`start_date` <= '"
+								+ selectBills.getStartTime()
+								+ "' AND sp.`end_date` >= '"
+								+ selectBills.getEndTime()
+								+ "') IS NULL THEN '0' "
 								+ "ELSE (SELECT sp.`total_money` FROM `pw_supplier_payment` sp WHERE "
 								+ "s.`supplierId` = sp.`supplierId` AND sp.`start_date` <= '"
-								+ selectBills.getStartTime() + "' AND sp.`end_date` >= '" + selectBills.getEndTime()
+								+ selectBills.getStartTime()
+								+ "' AND sp.`end_date` >= '"
+								+ selectBills.getEndTime()
 								+ "') END) totalMoney FROM" + findPaymentInfo);
 					}
-					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
-							+ selectBills.getEndTime() + "') supplier GROUP BY supplierId) s ");
+					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '"
+							+ selectBills.getStartTime() + "' AND '"
+							+ selectBills.getEndTime()
+							+ "') supplier GROUP BY supplierId) s ");
 				}
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`="
+							+ selectBills.getSupplierId());
 				}
 				buffer.append(" LIMIT ?,?");
-			} else if ("findSupplierPaymentInfo".equals(findType)) {
+			} else if ("findSupplierPaymentInfo".equals(findType)) {// 供应商付款记录信息
 				buffer.append(selectPaymentInfo);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`="
+							+ selectBills.getSupplierId());
 				}
-				buffer.append(" ORDER BY s.`supplierId` LIMIT ?,?");
+				buffer.append(" ORDER BY a.`supplier_payment_id` DESC LIMIT ?,?");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, SupplierPaymentInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -1022,19 +1161,25 @@ public class BillDaoImpl implements IBillDao {
 		try {
 			StringBuffer buffer = new StringBuffer();
 			if ("findSupplierPayment".equals(findType)) {
-				buffer.append("SELECT COUNT(*) FROM " + findPaymentInfo);				
-				if (!"".equals(selectBills.getStartTime()) && !selectBills.getStartTime().isEmpty()
-						&& !"".equals(selectBills.getEndTime()) && !selectBills.getEndTime().isEmpty()) {
-					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '" + selectBills.getStartTime() + "' AND '"
-							+ selectBills.getEndTime() + "') supplier GROUP BY supplierId) s ");
+				buffer.append("SELECT COUNT(*) FROM " + findPaymentInfo);
+				if (!"".equals(selectBills.getStartTime())
+						&& !selectBills.getStartTime().isEmpty()
+						&& !"".equals(selectBills.getEndTime())
+						&& !selectBills.getEndTime().isEmpty()) {
+					buffer.append(" WHERE b.`bills_entry_time` BETWEEN '"
+							+ selectBills.getStartTime() + "' AND '"
+							+ selectBills.getEndTime()
+							+ "') supplier GROUP BY supplierId) s ");
 				}
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`="
+							+ selectBills.getSupplierId());
 				}
 			} else if ("findSupplierPaymentInfo".equals(findType)) {
 				buffer.append(getPaymentTotalRows);
 				if (selectBills.getSupplierId() > 0) {
-					buffer.append(" WHERE s.`supplierId`=" + selectBills.getSupplierId());
+					buffer.append(" WHERE s.`supplierId`="
+							+ selectBills.getSupplierId());
 				}
 			}
 			con = DBUtil.getConnection();
@@ -1054,13 +1199,17 @@ public class BillDaoImpl implements IBillDao {
 
 	@Override
 	public int insertPayment(SupplierPayment payment) {
-		int flag = DaoHelper.insertUpdate(
-				"INSERT INTO `pw_supplier_payment`(supplierId,total_money," + "payment_date) VALUES(?,?,?)", payment);
+		// 调用DaoHelper反射类的insertUpdate新增或修改方法新增供应商付款信息
+		int flag = DaoHelper
+				.insertUpdate(
+						"INSERT INTO `pw_supplier_payment`(supplierId,total_money,"
+								+ "payment_date,start_date,end_date) VALUES(?,?,?,?,?)",
+						payment);
 		return flag;
 	}
 
 	@Override
-	public int insertMinimumStock(MinimumStock stock) {
+	public int insertMinimumStock(MinimumStock stock) {// 新增仓库最低库存信息
 		int flag = 0;
 		MinimumStock minimumStock = new MinimumStock();
 		try {
@@ -1068,15 +1217,17 @@ public class BillDaoImpl implements IBillDao {
 			ps = con.prepareStatement("SELECT * FROM `pw_minimum_stock` WHERE repertory_id=?");
 			ps.setInt(1, stock.getRepertoryId());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getSingleResult方法获取单条数据
 			minimumStock = JdbcHelper.getSingleResult(rs, MinimumStock.class);
-			if (minimumStock == null) {
+			if (minimumStock == null) {// 判断是否设置最低库存，若没有，则新增最低库存信息
 				flag = DaoHelper.insertUpdate(
-						"INSERT INTO pw_minimum_stock(repertory_id,minimum_quantity)" + " VALUES(?,?)", stock);
-			} else {
+						"INSERT INTO pw_minimum_stock(repertory_id,minimum_quantity)"
+								+ " VALUES(?,?)", stock);
+			} else {// 否则更新最低库存信息
 				stock.setMinimumStockId(minimumStock.getMinimumStockId());
 				flag = DaoHelper.insertUpdate(
-						"UPDATE pw_minimum_stock SET repertory_id=?,minimum_quantity=?" + " WHERE minimum_stock_id=?",
-						stock);
+						"UPDATE pw_minimum_stock SET repertory_id=?,minimum_quantity=?"
+								+ " WHERE minimum_stock_id=?", stock);
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -1088,18 +1239,25 @@ public class BillDaoImpl implements IBillDao {
 	}
 
 	@Override
-	public List<RawMaterialInfo> selectMinimumStock(SelectBills selectBills, Page page) {
+	public List<RawMaterialInfo> selectMinimumStock(SelectBills selectBills,
+			Page page) {// 查询最低库存信息
 		List<RawMaterialInfo> infos = new ArrayList<RawMaterialInfo>();
 		try {
 			StringBuffer buffer = new StringBuffer(selectMinimumStock);
+			// 查询条件拼接
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`="
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`="
+						+ selectBills.getRawMaterialNum());
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			buffer.append(" ORDER BY p.`warehouseId`,p.`raw_material_id` LIMIT ?,?");
 			con = DBUtil.getConnection();
@@ -1107,6 +1265,7 @@ public class BillDaoImpl implements IBillDao {
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			// 调用JdbcHelper反射类的getResult方法获取list集合数据
 			infos = JdbcHelper.getResult(rs, RawMaterialInfo.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -1122,17 +1281,24 @@ public class BillDaoImpl implements IBillDao {
 		long totalRow = 0;
 		try {
 			StringBuffer buffer = new StringBuffer(getMinimumStockTotalRow);
+			// 查询条件拼接
 			if (selectBills.getWarehouseId() > 0) {
-				buffer.append(" WHERE p.`warehouseId`=" + selectBills.getWarehouseId());
+				buffer.append(" WHERE p.`warehouseId`="
+						+ selectBills.getWarehouseId());
 			}
-			if (!"".equals(selectBills.getRawMaterialNum()) && !selectBills.getRawMaterialNum().isEmpty()) {
-				buffer.append(" AND r.`raw_material_num`=" + selectBills.getRawMaterialNum());
+			if (!"".equals(selectBills.getRawMaterialNum())
+					&& !selectBills.getRawMaterialNum().isEmpty()) {
+				buffer.append(" AND r.`raw_material_num`="
+						+ selectBills.getRawMaterialNum());
 			}
 			if (selectBills.getRawMaterialBigId() > 0) {
-				buffer.append(" AND s.`raw_material_big_id`=" + selectBills.getRawMaterialBigId());
+				buffer.append(" AND s.`raw_material_big_id`="
+						+ selectBills.getRawMaterialBigId());
 			}
-			if (!"".equals(selectBills.getRawMaterialName()) && !selectBills.getRawMaterialName().isEmpty()) {
-				buffer.append(" AND r.`raw_material_name` like '%" + selectBills.getRawMaterialName() + "%'");
+			if (!"".equals(selectBills.getRawMaterialName())
+					&& !selectBills.getRawMaterialName().isEmpty()) {
+				buffer.append(" AND r.`raw_material_name` like '%"
+						+ selectBills.getRawMaterialName() + "%'");
 			}
 			con = DBUtil.getConnection();
 			ps = con.prepareStatement(buffer.toString());

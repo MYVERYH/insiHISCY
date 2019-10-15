@@ -33,7 +33,7 @@ public interface IOrderService extends BaseService<Order, Integer> {
 
 	public long getPSMaterialRow(int id);
 	
-	public double getRepertoryAmount(int warehouseId, int rawMaterialId);
+	public int getRepertoryAmount(int warehouseId, int rawMaterialId);
 	
 	public String insertGodownOrders(Order order);
 

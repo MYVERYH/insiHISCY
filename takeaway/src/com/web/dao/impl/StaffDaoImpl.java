@@ -37,18 +37,19 @@ public class StaffDaoImpl implements IStaffDao {
 	private String findAlls = "select * from pw_position";
 
 	@Override
-	public List<Staff> selectAll() {
+	public List<Staff> selectAll() {//查询全部员工信息
 		List<Staff> staffs = new ArrayList<Staff>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement("SELECT * FROM pw_staff");
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			staffs = JdbcHelper.getResult(rs, Staff.class);
 		} catch (SQLException e) {
 			// TODO: handle exception
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return staffs;
 	}
@@ -57,71 +58,74 @@ public class StaffDaoImpl implements IStaffDao {
 	public Staff findById(int id) {
 		Staff staff = new Staff();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findById);
 			ps.setInt(1, id);
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取单条数据
 			staff = JdbcHelper.getSingleResult(rs, Staff.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return staff;
 	}
 
 	@Override
 	public int insert(Staff staff) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(insert, staff);
+		//调用DaoHelper反射类的insertUpdate方法新增员工信息
+		int flag = DaoHelper.insertUpdate(insert, staff);
 		return flag;
 	}
 
 	@Override
 	public int update(Staff staff) {
-		int flag = 0;
-		flag = DaoHelper.insertUpdate(update, staff);
+		//调用DaoHelper反射类的insertUpdate方法修改员工信息
+		int flag = DaoHelper.insertUpdate(update, staff);
 		return flag;
 	}
 
 	@Override
 	public int delete(int id) {
-		int flag = 0;
-		flag = DaoHelper.delete(delete, id);
+		//调用DaoHelper反射类的delete方法删除员工信息
+		int flag = DaoHelper.delete(delete, id);
 		return flag;
 	}
 
 	@Override
-	public List<StaffInfo> findAll(Page page) {
+	public List<StaffInfo> findAll(Page page) {//查询员工相关信息
 		List<StaffInfo> staffInfos = new ArrayList<StaffInfo>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findAll);
 			ps.setInt(1, page.getStartIndex());
 			ps.setInt(2, page.getLimit());
 			rs = ps.executeQuery();
+			//调用JdbcHelper反射类的getResult方法获取list集合数据
 			staffInfos = JdbcHelper.getResult(rs, StaffInfo.class);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return staffInfos;
 	}
 
 	@Override
 	public long getTotalRow() {
+		//调用DaoHelper反射类的getTotalRow方法获取员工信息总条数
 		long intTotalRow = DaoHelper.getTotalRow(getTotalRow);
 		return intTotalRow;
 	}
 
 	@Override
-	public List<Position> findAll() {
+	public List<Position> findAll() {//查询职位
 		List<Position> positions = new ArrayList<Position>();
 		try {
-			con = DBUtil.getConnection();
+			con = DBUtil.getConnection();//获取连接
 			ps = con.prepareStatement(findAlls);
 			rs = ps.executeQuery();
 			positions = JdbcHelper.getResult(rs, Position.class);
@@ -129,7 +133,7 @@ public class StaffDaoImpl implements IStaffDao {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			DBUtil.close(con, ps, rs);
+			DBUtil.close(con, ps, rs);//关闭con, ps, rs
 		}
 		return positions;
 	}
